@@ -24,6 +24,7 @@ from itertools import izip
 
 sys.path.insert(0, "/home/nboley/grit/grit/")
 from grit.files.gtf import load_gtf
+import grit.config as config
 
 VERBOSE = True
 
@@ -325,7 +326,7 @@ def match_transcripts( ref_grp, t_grp, build_maps, build_maps_stats ):
                 # if the begginings match
                 if list(exons) == r_exons[ :len(exons) ]:
                     # if the current best match is None, this is better
-                    if curr_best_contains_index == None:
+                    if curr_best_contains_index is None:
                         curr_best_contains_index = i
                         # if the best contains match is not required
                         # just return the first one found
@@ -389,7 +390,7 @@ def match_transcripts( ref_grp, t_grp, build_maps, build_maps_stats ):
                     if max(start_diff, stop_diff) < MAX_GENE_BNDRY_DISTANCE:
                         match = right_t
                         break
-                if match != None:
+                if match is not None:
                     add_map_lines([left_t,], "=", match[0], match[1])
                 else:
                     # if we didn't find any better match, then add "u" class
@@ -398,7 +399,7 @@ def match_transcripts( ref_grp, t_grp, build_maps, build_maps_stats ):
             """
             # if there is a contains match then add it
             contains_match_index = get_contains_match( introns )
-            if contains_match_index != None:
+            if contains_match_index is not None:
                 c_g_id = right_contained[introns[:2]][contains_match_index][0]
                 c_t_id = right_contained[introns[:2]][contains_match_index][1]
                 
@@ -407,7 +408,7 @@ def match_transcripts( ref_grp, t_grp, build_maps, build_maps_stats ):
             
             # if there is an intron match add it
             intron_match = get_intron_match( introns )
-            if intron_match != None:
+            if intron_match is not None:
                 i_g_name, i_t_name = intron_match
                 add_map_lines( transcripts, "j", i_g_name, i_t_name )
                 continue
@@ -462,7 +463,7 @@ def calc_trans_cnts( all_trans_cnts, build_maps_stats, output_stats ):
         t_trans_tot += grp_trans_cnts[1]
         r_trans_overlap += grp_trans_cnts[2]
         t_trans_overlap += grp_trans_cnts[3]
-        # if suppress_maps_stats then grp_class_cnts == None
+        # if suppress_maps_stats then grp_class_cnts is None
         if build_maps_stats:
             r_class_cnts = update_class_cnts( r_class_cnts, grp_class_cnts[0] )
             t_class_cnts = update_class_cnts( t_class_cnts, grp_class_cnts[1] )
@@ -493,9 +494,9 @@ def match_all_transcripts( clustered_transcripts, build_maps,
                 = match_transcripts(r_grp, t_grp, build_maps, build_maps_stats)
             
             if build_maps:
-                if r_map != None and len(r_map) > 0:
+                if r_map is not None and len(r_map) > 0:
                     refmap_fp.write( "\n".join( r_map ) + "\n" )
-                if t_map != None and len(t_map) > 0:
+                if t_map is not None and len(t_map) > 0:
                     tmap_fp.write( "\n".join( t_map ) + "\n" )
             
             all_trans_cnts.append( (grp_trans_cnts, grp_class_cnts) )
@@ -546,7 +547,7 @@ class OutputStats( dict ):
 def make_class_cnts_string( class_counts, ref_fname, gtf_fname ):
     # if suppress_maps_stats then class_counts will be None and 
     # so should not be output
-    if all( item == None for item in class_counts ):
+    if all( item is None for item in class_counts ):
         return ''
     
     r_class_cnts, t_class_cnts = class_counts
@@ -579,13 +580,13 @@ def compare( ref_fname, gtf_fname, build_maps, build_maps_stats,
     
     # get recall and prceision stats for all types of exons and introns
     build_element_stats(ref_genes, t_genes, output_stats)
-    if VERBOSE: print >> sys.stderr, "Finished building element stats"
+    if VERBOSE: config.log_statement("Finished building element stats")
     
     clustered_transcripts = cluster_overlapping_genes( (ref_genes, t_genes) )
     if VERBOSE:
         n_clusters = sum(len(val) for val in clustered_transcripts.itervalues())
-        print >> sys.stderr, \
-            "Finished clustering genes into %i clusters." % n_clusters
+        config.log_statement(
+            "Finished clustering genes into %i clusters." % n_clusters)
     
     # calculate transcript overlaps and class match counts
     # also write map files if requested
@@ -593,9 +594,9 @@ def compare( ref_fname, gtf_fname, build_maps, build_maps_stats,
         match_all_transcripts( clustered_transcripts, build_maps, 
                                build_maps_stats, out_prefix, output_stats )
         
-    if out_prefix == None:
+    if out_prefix is None:
         # dump stats to stdout
-        print str(output_stats) + '\n'
+        config.log_statement(str(output_stats) + '\n')
     else:
         # prepare formated stats output
         op = [ str(output_stats), ]
@@ -607,7 +608,7 @@ def compare( ref_fname, gtf_fname, build_maps, build_maps_stats,
             stats_fp.write( "\n".join(op) + '\n' )
         
         if VERBOSE:
-            print "\n".join( op ) + '\n'
+            config.log_statement("\n".join( op ) + '\n')
     
     return
 

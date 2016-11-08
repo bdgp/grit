@@ -47,18 +47,18 @@ def build_merged_transcript(gene_id, clustered_transcripts):
     # merge the promoters
     try:
         new_promoter = ( min(t.promoter[0] for t in clustered_transcripts 
-                             if t.promoter != None),
+                             if t.promoter is not None),
                          max(t.promoter[1] for t in clustered_transcripts
-                             if t.promoter != None) )
+                             if t.promoter is not None) )
     except ValueError:
         new_promoter = None
     
     # merge the polyas
     try:
         new_polya = ( min(t.polya_region[0] for t in clustered_transcripts 
-                          if t.polya_region != None),
+                          if t.polya_region is not None),
                       max(t.polya_region[1] for t in clustered_transcripts
-                          if t.polya_region != None) )
+                          if t.polya_region is not None) )
     except ValueError:
         new_polya = None
     
@@ -137,7 +137,7 @@ def reduce_gene_clustered_transcripts(
         max_cluster_gap=50):
     # unpickle the genes, and find the expression thresholds    
     unpickled_genes = []
-    if min_upper_fpkm == None: min_upper_fpkm = -1
+    if min_upper_fpkm is None: min_upper_fpkm = -1
     max_fpkm_lb_across_samples = -1.0
     max_fpkm_lb_in_sample = defaultdict(lambda: -1.0)
     
@@ -148,7 +148,7 @@ def reduce_gene_clustered_transcripts(
         try: 
             max_fpkm_lb_in_gene = max( 
                 transcript.conf_lo for transcript in gene.transcripts
-                if transcript.conf_lo != None )
+                if transcript.conf_lo is not None )
         except ValueError:
             continue
         max_fpkm_lb_across_samples = max( 
@@ -164,9 +164,9 @@ def reduce_gene_clustered_transcripts(
         min_max_fpkm = max(
                 min_upper_fpkm, 
                 ( max_fpkm_lb_in_sample[gtf_fname]/max_intrasample_fpkm_ratio 
-                  if max_intrasample_fpkm_ratio != None else -1 ),
+                  if max_intrasample_fpkm_ratio is not None else -1 ),
                 ( max_fpkm_lb_across_samples/max_intersample_fpkm_ratio
-                  if max_intersample_fpkm_ratio != None else -1 )
+                  if max_intersample_fpkm_ratio is not None else -1 )
                 )
         for transcript in gene.transcripts:
             # if we have expression scores and this transcript is below the

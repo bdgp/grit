@@ -66,8 +66,8 @@ class FlDist( object ):
             assert type( fl_max ) == int
             assert len( fl_density ) == ( fl_max - fl_min + 1 )
         except:
-            print fl_density
-            print fl_min, fl_max
+            config.log_statement(fl_density)
+            config.log_statement((fl_min, fl_max))
             raise
         
         self.fl_min = fl_min
@@ -249,7 +249,7 @@ def analyze_fl_dists( fragments, out_filename='diagnostic_plots.pdf'):
     # Compare fragment lengths to the exons from which they came
     exon_len_grouped_frag_lengths = group_fragments_by_exonlen( fragments )
     grouped_frag_lengths_for_bxplt = []
-    #print 'Exon length binned statistics(mean,sd,skew,se_m,se_sd,se_sk,low,up):'
+    #config.log_statement('Exon length binned statistics(mean,sd,skew,se_m,se_sd,se_sk,low,up):')
     for exon_binned_frag_lengths in exon_len_grouped_frag_lengths:
         fl_dist = build_robust_fl_dist_with_stats( exon_binned_frag_lengths )
         grouped_frag_lengths_for_bxplt.append( exon_binned_frag_lengths[ \
@@ -319,10 +319,10 @@ def build_robust_fl_dist_with_stats( fragment_lengths ):
     
     new_fls = sorted_fls[ (sorted_fls > lower_bnd) & (sorted_fls < upper_bnd) ]
     if len( new_fls ) == 0:
-        print sorted_fls
-        print lower_bnd
-        print upper_bnd
-        print >> sys.stderr, "WARNING: There aren't any fragments after filtering."
+        config.log_statement("sorted_fls="+sorted_fls)
+        config.log_statement("lower_bnd="+lower_bnd)
+        config.log_statement("upper_bnd="+upper_bnd)
+        config.log_statement("WARNING: There aren't any fragments after filtering.")
         new_fls = sorted_fls
     
     lower_bnd = new_fls[0]
@@ -423,21 +423,21 @@ def cluster_rdgrps( fl_dists ):
                        key=operator.itemgetter(1) )
     
     if VERBOSE:
-        print 'Read group clustering statistics'
-        print 'read_group\tmean\t\t\tSD\t\t\tskew\t\t\tcluster_group'
+        config.log_statement('Read group clustering statistics')
+        config.log_statement('read_group\tmean\t\t\tSD\t\t\tskew\t\t\tcluster_group')
         for read_group, cluster in clusters:
             # mean cluster will not have stats and will be skipped
             try:
                 rg_stats = stats[ read_group ]
             except KeyError:
-                print 'Should be mean and last cluster group:', \
-                    read_group, str(cluster)
+                config.log_statement('Should be mean and last cluster group:', \
+                    read_group, str(cluster))
                 continue
-            print '%s\t%.5f+/-%.5f\t%.5f+/-%.5f\t%.5f+/-%.5f\t%s' % (read_group, \
+            config.log_statement('%s\t%.5f+/-%.5f\t%.5f+/-%.5f\t%.5f+/-%.5f\t%s' % (read_group, \
                                  rg_stats[0][0], 0.10*rg_stats[0][0], \
                                  rg_stats[0][1], 0.10*rg_stats[0][1], \
                                  rg_stats[0][2], 4*rg_stats[1][2], \
-                                 cluster )
+                                 cluster ))
     
     return dict( clusters )
 
@@ -516,7 +516,7 @@ def find_fragments_in_exon( reads, exon ):
         strand = '-' if read1.is_reverse else '+'
         
         frag_len = find_frag_len( read1, read2 )
-        if frag_len == None:
+        if frag_len is None:
             continue
         
         key = ( read_group, read1.inferred_length, frag_len )

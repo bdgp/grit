@@ -79,7 +79,7 @@ def calc_lhd( freqs, observed_array, expected_array,
     rv = sparsify_support_fns.calc_lhd(freqs, observed_array, expected_array)
 
     if sparse_penalty > 0:
-        if sparse_index != None:
+        if sparse_index is not None:
             penalty = math.log(sparse_penalty) - math.log(freqs[sparse_index])
             rv -= math.exp(penalty)
         else:
@@ -93,7 +93,7 @@ def calc_gradient( freqs, observed_array, expected_array,
     rv = sparsify_support_fns.calc_gradient(
         freqs, observed_array, expected_array)
     if sparse_penalty > 0:
-        if sparse_index != None:
+        if sparse_index is not None:
             penalty = math.log(sparse_penalty) - 2*math.log(freqs[sparse_index])
             rv[sparse_index] -= math.exp(penalty)
         else:
@@ -218,7 +218,7 @@ def calc_max_feasible_step_size_and_limiting_index_BAD( x0, gradient ):
         step_size = -steps[ steps < 0 ].max()
         step_size_i = ( steps == -step_size ).nonzero()[0]
     except:
-        print steps
+        config.log_statement("steps="+steps)
         raise
     return step_size, step_size_i
 
@@ -238,7 +238,7 @@ def calc_max_feasible_step_size_and_limiting_index( x0, gradient ):
             max_ss = ss
             max_i = i
     
-    if max_i == None:
+    if max_i is None:
         return 0, 0
     return -max_ss, max_i
 
@@ -260,7 +260,7 @@ def build_zero_eliminated_matrices(x, full_expected_array,
     new_x = full_x[ nonzeros ]
     new_expected_array = full_expected_array[:, nonzeros]
 
-    if sparse_index != None:
+    if sparse_index is not None:
         sparse_index = sparse_index - sum(1 for i in zeros if i < sparse_index)
     return new_x, new_expected_array, zeros, sparse_index
    
@@ -428,7 +428,7 @@ def estimate_transcript_frequencies_with_cvxopt(
     thetas = variable( ps.shape[1] )
     constraints = [ eq(sum(thetas), 1), geq(thetas,0)]
 
-    if sparse_penalty == None:
+    if sparse_penalty is None:
         p = program( maximize(Xs*log(ps*thetas)), constraints )
     else:
         p = program( maximize(Xs*log(ps*thetas) - sparse_penalty*quad_over_lin(
@@ -457,7 +457,7 @@ def estimate_transcript_frequencies_sparse(
     x = numpy.ones(n, dtype=float)/n
     eps = 0.1
     sparse_penalty = 100
-    if min_sparse_penalty == None:
+    if min_sparse_penalty is None:
         min_sparse_penalty = LHD_ABS_TOL
         # always skip the out of gene transcript
         #sparse_index = numpy.argmax(x[1:]) + 1
@@ -487,7 +487,7 @@ def estimate_transcript_frequencies_sparse(
             if eps == LHD_ABS_TOL and sparse_penalty == min_sparse_penalty:
                 break
             eps = max( eps/10, LHD_ABS_TOL )
-            if sparse_penalty != None:
+            if sparse_penalty is not None:
                 sparse_penalty = max( sparse_penalty/5, min_sparse_penalty )
     
     for i in xrange( 10 ):
@@ -555,7 +555,7 @@ def estimate_confidence_bound( f_mat,
     eps = 0.1
     #expected_array = expected_array[:, 0:4]    
     #mle_estimate = mle_estimate[:-1]
-    #print mle_estimate
+    #config.log_statement("mle_estimate="+mle_estimate)
     if 1 == expected_array.shape[1]:
         return 1.0, 1.0
     

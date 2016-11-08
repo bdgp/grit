@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License
 along with GRIT.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import os, sys
+import os, sys, traceback
 
 # config options shared across modules
 
@@ -82,16 +82,19 @@ tmp_dir = None
 
 def get_gene_tmp_fname(gene_id, sample_type=None, rep_id=None):
     rv = os.path.join(tmp_dir, "%s" % gene_id )
-    if sample_type != None: rv += ".%s" % sample_type
-    if rep_id != None: rv += ".%s" % rep_id
+    if sample_type is not None: rv += ".%s" % sample_type
+    if rep_id is not None: rv += ".%s" % rep_id
     return rv + ".gene"
 
 
 def get_fmat_tmp_fname(gene_id, sample_type=None, rep_id=None):
     rv = os.path.join(tmp_dir, "%s" % gene_id )
-    if sample_type != None: rv += ".%s" % sample_type
-    if rep_id != None: rv += ".%s" % rep_id
+    if sample_type is not None: rv += ".%s" % sample_type
+    if rep_id is not None: rv += ".%s" % rep_id
     return rv + ".fmat"
 
 def log_statement(*args, **kwargs):
-    print args[0]
+    message = '\n'.join(args).strip()
+    if message != '': 
+        print >>sys.stderr, message
+        print >>sys.stderr, ''.join(traceback.format_stack())

@@ -58,7 +58,7 @@ class SharedData(object):
 
     """    
     def get_gene(self, gene_id):
-        if self._cached_gene_id == gene_id and self._cached_gene != None:
+        if self._cached_gene_id == gene_id and self._cached_gene is not None:
             return self._cached_gene
         
         # we don't need to lock this because genes can only be
@@ -106,13 +106,13 @@ class SharedData(object):
         with self.design_mat_lock: 
             self.design_mat_filenames[gene_id].value = ofname
         
-        if f_mat.num_rnaseq_reads != None:
+        if f_mat.num_rnaseq_reads is not None:
             with self.num_rnaseq_reads.get_lock():
                 self.num_rnaseq_reads.value += f_mat.num_rnaseq_reads
-        if f_mat.num_fp_reads != None:
+        if f_mat.num_fp_reads is not None:
             with self.num_cage_reads.get_lock():
                 self.num_cage_reads.value += f_mat.num_fp_reads
-        if f_mat.num_tp_reads != None:
+        if f_mat.num_tp_reads is not None:
             with self.num_polya_reads.get_lock():
                 self.num_polya_reads.value += f_mat.num_tp_reads
         
@@ -280,7 +280,6 @@ def find_confidence_bounds_in_gene( gene, num_reads_in_bams,
         with cntr.get_lock():
             index = cntr.value
             if index == -1: 
-                config.log_statement('')
                 break
             cntr.value -= 1
                 
@@ -323,7 +322,6 @@ def find_confidence_bounds_worker(
         try: gene_id = gene_ids.get(timeout=0.1)
         except Queue.Empty: 
             assert gene_ids.qsize() == 0
-            config.log_statement("")
             raise IndexError, "No genes left"
         
         config.log_statement(
@@ -360,7 +358,7 @@ def find_confidence_bounds_worker(
                 longest_gene_id = gene_id
                 gene_len = value
         
-        if longest_gene_id == None: 
+        if longest_gene_id is None: 
             return None
         
         gene = data.get_gene(longest_gene_id)
@@ -384,7 +382,7 @@ def find_confidence_bounds_worker(
                 continue
             except IndexError: 
                 res = get_gene_being_processed()
-                if res == None: 
+                if res is None: 
                     break
                 gene, f_mat, mle_estimate, trans_indices, cntr = res
             
@@ -400,7 +398,6 @@ def find_confidence_bounds_worker(
         except Exception, inst:
             config.log_statement( traceback.format_exc(), log=True )
     
-    config.log_statement("")
     return
 
 def estimate_confidence_bounds( data, bnd_type ):
@@ -439,7 +436,7 @@ def estimate_confidence_bounds( data, bnd_type ):
             pids.append(pid)
         
         for pid in pids:
-            config.log_statement("Waiting on pid '%i'" % pid)
+            #config.log_statement("Waiting on pid '%i'" % pid)
             os.waitpid(pid, 0) 
     
     return
@@ -447,10 +444,9 @@ def estimate_confidence_bounds( data, bnd_type ):
 
 def estimate_mle_worker( gene_ids, data ):
     while True:
-        config.log_statement("Retrieving gene from queue")
+        #config.log_statement("Retrieving gene from queue")
         gene_id = gene_ids.get()
         if gene_id == 'FINISHED': 
-            config.log_statement("")
             return
         
         try:
@@ -473,7 +469,9 @@ def estimate_mle_worker( gene_ids, data ):
             num_reads_in_bams = data.get_num_reads_in_bams()
             expected_array, observed_array = f_mat.expected_and_observed(
                 num_reads_in_bams)
-            if (expected_array, observed_array) == (None, None): 
+            if (expected_array, observed_array) is (None, None): 
+                continue
+            if observed_array is not None and observed_array.sum() == 0:
                 continue
             mle = frequency_estimation.estimate_transcript_frequencies( 
                 observed_array, expected_array)
@@ -538,17 +536,16 @@ def estimate_mles( data ):
 def build_design_matrices_worker( gene_ids, 
                                   data, fl_dists,
                                   (rnaseq_reads, promoter_reads, polya_reads)):
-    assert fl_dists != None
-    config.log_statement("Reloading read data in subprocess")
-    if rnaseq_reads != None: rnaseq_reads = rnaseq_reads.reload()
-    if promoter_reads != None: promoter_reads = promoter_reads.reload()
-    if polya_reads != None: polya_reads = polya_reads.reload()
+    assert fl_dists is not None
+    #config.log_statement("Reloading read data in subprocess")
+    if rnaseq_reads is not None: rnaseq_reads = rnaseq_reads.reload()
+    if promoter_reads is not None: promoter_reads = promoter_reads.reload()
+    if polya_reads is not None: polya_reads = polya_reads.reload()
     
     while True:
-        config.log_statement("Acquiring gene to process")        
+        #config.log_statement("Acquiring gene to process")        
         gene_id = gene_ids.get()
         if gene_id == 'FINISHED': 
-            config.log_statement("")
             return
         try:
             config.log_statement("Loading gene '%s'" % gene_id)
@@ -580,7 +577,7 @@ def build_design_matrices_worker( gene_ids,
 
 def build_design_matrices( data, fl_dists,
                            (rnaseq_reads, promoter_reads, polya_reads)):    
-    assert fl_dists != None
+    assert fl_dists is not None
     gene_ids = multiprocessing.Queue()
     config.log_statement( "Populating build design matrices queue" )
     sorted_gene_ids = sorted(data.gene_ids, 
@@ -619,14 +616,14 @@ def build_design_matrices( data, fl_dists,
             gene_ids.put('FINISHED')
         config.log_statement("Waiting on design matrix children")
         
-        #while any( p != None and p.is_alive() for p in ps ):
+        #while any( p is not None and p.is_alive() for p in ps ):
         #while len(ps) > 0:
         #    config.log_statement(
         #   "Waiting for design matrix children processes to finish (%i/%i genes remain)"%(
         #            gene_ids.qsize(), len(data.gene_ids)))
         #    time.sleep(1.)
         for pid in ps:
-            config.log_statement("Waiting on pid '%i'" % pid)
+            #config.log_statement("Waiting on pid '%i'" % pid)
             os.waitpid(pid, 0)
 
     config.log_statement("Read counts: %s" % str(data.get_num_reads_in_bams()), 
@@ -640,10 +637,10 @@ def build_gene_lines_for_tracking_file(
     mles = data.get_mle(gene_id)
     mle_fpkms = calc_fpkm( gene, fl_dists, mles[1:], num_reads_in_bams)
     ubs = data.get_cbs(gene_id, 'ub')
-    if ubs != None:
+    if ubs is not None:
         ub_fpkms = calc_fpkm( gene, fl_dists, ubs, num_reads_in_bams)
     lbs = data.get_cbs(gene_id, 'lb')
-    if lbs != None:
+    if lbs is not None:
         lb_fpkms = calc_fpkm( gene, fl_dists, lbs, num_reads_in_bams)
     try: sorted_transcripts = sorted(gene.transcripts,
                                      key=lambda x: int(x.id.split("_")[-1]))
@@ -655,11 +652,11 @@ def build_gene_lines_for_tracking_file(
         line.append(t.id.ljust(11))
         line.append(t.gene_id.ljust(11))
         line.append('-'.ljust(8))
-        if mles == None or mle_fpkms[i] == None: line.append('-       ')
+        if mles is None or mle_fpkms[i] is None: line.append('-       ')
         else: line.append(('%.2e' % mle_fpkms[i]).ljust(8))
-        if lbs == None or lb_fpkms[i] == None: line.append('-       ')
+        if lbs is None or lb_fpkms[i] is None: line.append('-       ')
         else: line.append(('%.2e' % lb_fpkms[i]).ljust(8))
-        if ubs == None or ub_fpkms[i] == None: line.append('-       ')
+        if ubs is None or ub_fpkms[i] is None: line.append('-       ')
         else: line.append(('%.2e' % ub_fpkms[i]).ljust(8))
         line.append( "OK" )
         lines.append("\t".join(line))
@@ -696,7 +693,7 @@ def quantify_transcript_expression(
     ofname, sample_type=None, rep_id=None ):
     """Build transcripts
     """
-    assert rnaseq_reads.fl_dists != None
+    assert rnaseq_reads.fl_dists is not None
 
     global SAMPLE_ID
     SAMPLE_ID=sample_type

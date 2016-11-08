@@ -82,11 +82,11 @@ class Junction( _JnNamedTuple ):
         #    raise ValueError, "regions must be of type GenomicInterval"
         if region.strand not in ("+", "-" ):
             raise ValueError, "Unrecognized strand '%s'" % strand
-        if jn_type != None and jn_type not in self.valid_jn_types:
+        if jn_type is not None and jn_type not in self.valid_jn_types:
             raise ValueError, "Unrecognized jn type '%s'" % jn_type
         
-        if cnt != None: cnt = int( cnt )
-        if uniq_cnt != None: uniq_cnt = int( uniq_cnt )
+        if cnt is not None: cnt = int( cnt )
+        if uniq_cnt is not None: uniq_cnt = int( uniq_cnt )
         
         return _JnNamedTuple.__new__( 
             Junction, region,
@@ -98,25 +98,25 @@ class Junction( _JnNamedTuple ):
     stop = property( lambda self: self.region.stop )
 
     def build_gff_line( self, group_id=None, fasta_obj=None ):
-        if self.type == None and fasta_obj != None:
+        if self.type is None and fasta_obj is not None:
             intron_type = get_jn_type( 
                 self.chr, self.start, self.stop, fasta_obj, self.strand )
         else:
             intron_type = self.type
         
-        group_id_str = str(group_id) if group_id != None else ""
+        group_id_str = str(group_id) if group_id is not None else ""
 
-        if self.source_read_offset != None:
+        if self.source_read_offset is not None:
             group_id_str += ' source_read_offset "{0}";'.format( 
                 self.source_read_offset )
         
-        if self.uniq_cnt != None:
+        if self.uniq_cnt is not None:
             group_id_str += ' uniq_cnt "{0}";'.format( self.uniq_cnt )
         
-        if intron_type != None:
+        if intron_type is not None:
             group_id_str += ' type "{0}";'.format( intron_type )
         
-        count = self.cnt if self.cnt != None else 0
+        count = self.cnt if self.cnt is not None else 0
         
         return create_gff_line( 
             self.region, group_id_str, score=count, feature='intron' )
@@ -171,7 +171,7 @@ def iter_junctions( reads_fn, fasta_fn, stranded, reverse_strand, pairs_are_opp_
     
     # build reads object
     reads = Samfile( reads_fn, "rb" )
-    fasta_obj = None if fasta_fn == None else Fastafile( fasta_fn )
+    fasta_obj = None if fasta_fn is None else Fastafile( fasta_fn )
     
     # store the number of reads across the junction for each relative 
     # read position

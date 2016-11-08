@@ -84,7 +84,7 @@ def parse_arguments():
     args = parser.parse_args()
         
     # create default if no prefix provided or if same as gtf filename
-    if args.output_filename == None:
+    if args.output_filename is None:
         ofp = sys.stdout
     else:
         ofp = open( args.output_filename, 'w' )

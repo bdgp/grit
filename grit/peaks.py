@@ -293,13 +293,13 @@ class TestSignificance(object):
             if start > r_stop: break
             start = max(start, r_start)
             stop = min(stop, r_stop)
-            if ( split_interval == None or
+            if ( split_interval is None or
                  stop-start+1 > split_interval[1] - split_interval[0] ):
                 split_interval = (start, stop)
         
         # if we found one, then use it. Otherwise, find the location with
         # the minimum signal
-        if split_interval != None:
+        if split_interval is not None:
             #diff = split_interval[1] - split_interval[0]
             #return split_interval[0]+diff/2, split_interval[0]+diff/2
             return split_interval[0], split_interval[1]+1

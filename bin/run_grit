@@ -21,6 +21,7 @@ along with GRIT.  If not, see <http://www.gnu.org/licenses/>.
 
 import os, sys
 import subprocess
+import multiprocessing
 from collections import defaultdict, namedtuple
 from itertools import chain
 import sqlite3
@@ -103,7 +104,7 @@ def extract_elements_from_genes( genes ):
 
 def run_bam2wig(fname, op_prefix, assay, region,
                 nthreads, reverse_read_strand, verbose):
-    print >> sys.stderr, "Building bedgraph for %s" % fname
+    config.log_statement("Building bedgraph for %s" % fname)
     assert assay in ["rnaseq", "cage", "rampage", "polya"], \
         "Unrecognized assay '%s'" % assay
     command = ["python", os.path.join(os.path.dirname(__file__), "bam2wig.py" )]
@@ -273,7 +274,7 @@ class Samples(object):
             with open(sample_type + ".fldist.obj") as fl_dists_fp:
                 fl_dists = pickle.load( fl_dists_fp )
         except:
-            print "CANT OPEN %s" % sample_type + ".fldist.obj"
+            #config.log_statement("CANT OPEN %s" % sample_type + ".fldist.obj", trace=True)
             fl_dists = None
 
         all_reads = []
@@ -374,7 +375,7 @@ class Samples(object):
                         for rep_reads in reads:
                             rep_reads.num_reads = read_cnts
         except IOError:
-            print "CANT OPEN %s" % sample_type + ".read_cnts.obj"
+            #config.log_statement("CANT OPEN %s" % sample_type + ".read_cnts.obj", trace=True)
             pass
         
         if verify_args:
@@ -535,7 +536,7 @@ def parse_arguments():
     parser.add_argument( '--continue-run', default=False, action='store_true',
         help='Continue a previously started run in --output-dir')
     
-    parser.add_argument( '--verbose', '-v', default=False, action='store_true',
+    parser.add_argument( '--verbose', '-v', default=True, action='store_true',
         help='Whether or not to print status information.')
     parser.add_argument( '--debug-verbose', default=False, action='store_true',
         help='Whether or not to print debugging information.')
@@ -545,12 +546,12 @@ def parse_arguments():
     parser.add_argument( '--ucsc', default=False, action='store_true',
         help='Try to format contig names in the ucsc format (typically by prepending a chr).')    
     parser.add_argument( '--batch-mode', '-b', 
-        default=False, action='store_true',
+        default=True, action='store_true',
         help='Disable the ncurses frontend, and just print status messages to stderr.')
     parser.add_argument( '--region', 
         help='Only use the specified region ( currently only accepts a contig name ).')
     
-    parser.add_argument( '--threads', '-t', default=1, type=int,
+    parser.add_argument( '--threads', '-t', default=multiprocessing.cpu_count(), type=int,
         help='The number of threads to use.')
         
     args = parser.parse_args()
@@ -693,12 +694,13 @@ class discover_elements(dict):
                 region_to_use=self.args.region )
             
             # set the fl dists, and read counts
+            config.log_statement("Writing to file %s" % str(sample_type)+".fldist.obj")
             with open(str(sample_type) + ".fldist.obj", "w") as fl_dists_ofp:
                 pickle.dump( fl_dists, fl_dists_ofp)
             rnaseq_reads.fl_dists = fl_dists
 
             # set the fl dists, and read counts
-            print all_read_cnts
+            config.log_statement("Writing to file %s" % str(sample_type)+".read_cnts.obj")
             with open(str(sample_type) + ".read_cnts.obj", "w") as read_cnts_ofp:
                 pickle.dump( all_read_cnts, read_cnts_ofp)
             for read_cnts, reads in zip(

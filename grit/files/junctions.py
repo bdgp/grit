@@ -115,11 +115,11 @@ class Junction( _JnNamedTuple ):
         #    raise ValueError, "regions must be of type GenomicInterval"
         if region.strand not in ("+", "-" ):
             raise ValueError, "Unrecognized strand '%s'" % strand
-        if jn_type != None and jn_type not in self.valid_jn_types:
+        if jn_type is not None and jn_type not in self.valid_jn_types:
             raise ValueError, "Unrecognized jn type '%s'" % jn_type
         
-        if cnt != None: cnt = int( cnt )
-        if uniq_cnt != None: uniq_cnt = int( uniq_cnt )
+        if cnt is not None: cnt = int( cnt )
+        if uniq_cnt is not None: uniq_cnt = int( uniq_cnt )
         
         return _JnNamedTuple.__new__( 
             Junction, region,
@@ -131,25 +131,25 @@ class Junction( _JnNamedTuple ):
     stop = property( lambda self: self.region.stop )
 
     def build_gff_line( self, group_id=None, fasta_obj=None ):
-        if self.type == None and fasta_obj != None:
+        if self.type is None and fasta_obj is not None:
             intron_type = get_jn_type( 
                 self.chr, self.start, self.stop, fasta_obj, self.strand )
         else:
             intron_type = self.type
         
-        group_id_str = str(group_id) if group_id != None else ""
+        group_id_str = str(group_id) if group_id is not None else ""
 
-        if self.source_read_offset != None:
+        if self.source_read_offset is not None:
             group_id_str += ' source_read_offset "{0}";'.format( 
                 self.source_read_offset )
         
-        if self.uniq_cnt != None:
+        if self.uniq_cnt is not None:
             group_id_str += ' uniq_cnt "{0}";'.format( self.uniq_cnt )
         
-        if intron_type != None:
+        if intron_type is not None:
             group_id_str += ' type "{0}";'.format( intron_type )
         
-        count = self.cnt if self.cnt != None else 0
+        count = self.cnt if self.cnt is not None else 0
         
         return create_gff_line( 
             self.region, group_id_str, score=count, feature='intron' )
@@ -233,12 +233,12 @@ def extract_junctions_in_region( reads, chrm, strand, start=None, end=None,
                      < config.MIN_INTRON_SIZE )
 
             # Filter out reads that aren't fully in the region
-            if start != None:
+            if start is not None:
                 if dnstrm_intron_pos < start: continue
                 if not allow_introns_to_span_start and upstrm_intron_pos<start:
                     continue
 
-            if end != None:
+            if end is not None:
                 if upstrm_intron_pos > end: continue
                 if not allow_introns_to_span_end and dnstrm_intron_pos>end:
                     continue
@@ -282,11 +282,10 @@ def load_junctions_worker(all_jns, all_jns_lock,
             all_jns_key.extend( region_jns )
             all_jns[key] = all_jns_key
     del jns
-    if config.VERBOSE: config.log_statement( "" )
     return
 
 def load_junctions_in_bam( reads, regions=None, nthreads=1):
-    if regions == None:
+    if regions is None:
         regions = []
         for contig, contig_len in zip(*get_contigs_and_lens([reads,])):
             for strand in '+-':

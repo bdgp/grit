@@ -49,10 +49,10 @@ def build_gene_tracking_lines(gene):
             mles, ubs, lbs, gene.transcripts):
         line = FPKMTrackingLine(
             t.id, # tracking ID
-            '-' if t.class_code == None else t.class_code,  # class code
-            '-' if t.ref_trans == None else t.ref_trans, # nearest ref id
+            '-' if t.class_code is None else t.class_code,  # class code
+            '-' if t.ref_trans is None else t.ref_trans, # nearest ref id
             t.gene_id, # gene unique id
-            '-' if t.ref_gene == None else t.ref_gene, # nearest reference gene
+            '-' if t.ref_gene is None else t.ref_gene, # nearest reference gene
             '-', # TSS ID
             "%s:%s:%i-%i" % (contig_name, t.strand, t.start, t.stop), 
             str(t.calc_length()) # transcript length

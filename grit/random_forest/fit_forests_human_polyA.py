@@ -31,6 +31,7 @@ from bx.intervals.intersection import Intersecter, Interval
 
 from ..files.gtf import load_gtf, iter_gff_lines
 from ..files.reads import RNAseqReads, clean_chr_name
+import config
 GenomicInterval = namedtuple('GenomicInterval', ['chr','strand','start','stop'])
 
 VERBOSE = False
@@ -145,7 +146,7 @@ def parse_fasta( fn ):
         else:
             if not genome.has_key(chrm):
                 genome[chrm] = []
-                print >>sys.stderr, chrm
+                config.log_statement(chrm)
             genome[chrm].append(data.lower())
     for chrm in genome.keys():
         genome[chrm] = ''.join(genome[chrm])
@@ -216,7 +217,7 @@ def get_elements_from_gene( gene, get_tss=True, get_jns=True, \
                 tes_exons.add( tp_region )
         else:
             if strand != '-':
-                print >> sys.stderr, "BADBADBAD", strand
+                config.log_statement("BADBADBAD", strand)
                 continue
             assert strand == '-'
             if get_tss:
@@ -342,8 +343,8 @@ def get_overlapping_elements( tes_dict, elements_I, w ):
     over = dict()
     for (chrm,strand) in tes_dict.keys():
         if not elements_I.has_key((chrm,strand)):
-            print >> sys.stderr, \
-                "warning, element_intersecter does not contain the chrm: ", chrm
+            config.log_statement(
+                "warning, element_intersecter does not contain the chrm: ", chrm)
             continue
         for tes in tes_dict[(chrm,strand)].keys():
             H = elements_I[(chrm,strand)].find(tes-start,tes+end)
@@ -364,8 +365,8 @@ def remove_overlapping_elements( tes_dict, elements_I, w ):
     over = dict()
     for (chrm,strand) in tes_dict.keys():
         if not elements_I.has_key((chrm,strand)):
-            print >> sys.stderr, \
-                "warning, element_intersecter does not contain the chrm: ", chrm
+            config.log_statement(
+                "warning, element_intersecter does not contain the chrm: ", chrm)
             continue
         for tes in tes_dict[(chrm,strand)].keys():
             H = elements_I[(chrm,strand)].find(tes-start,tes+end)
@@ -387,8 +388,8 @@ def extract_genome_sequence( genome, tes_dict, w ):
     end = w+1
     for (chrm,strand) in tes_dict.keys():
         if not genome.has_key(chrm):
-            print >> sys.stderr, \
-                "warning, genome sequence does not contain the chrm: ", chrm
+            config.log_statement(
+                "warning, genome sequence does not contain the chrm: ", chrm)
             continue
         for tes in tes_dict[(chrm,strand)].keys():
             seq = genome[chrm][tes-start:tes+end]
@@ -486,7 +487,7 @@ def extract_covariates_from_seqs( seqs, w, polyA_density_curr,
             key_code = '_'.join(map(str,seq_index[:-1]))
             local_density = polyA_density_curr[key_code]
             delete_this.append(ind)
-            print >>sys.stderr, w, seq, local_density
+            config.log_statement(w, seq, local_density)
             continue
             
         seq_ind = seqs_inds[ind]
@@ -687,7 +688,7 @@ def get_RNAseq_density_worker( reads, sites, sites_lock, dense ):
             args = [sites.pop(),] #[-1:]
             #del sites[-1:]
         if DEBUG_VERBOSE and sites_len%1000 == 0:
-            print >> sys.stderr, "%i polyA sites remain" % sites_len
+            config.log_statement("%i polyA sites remain" % sites_len)
         for chrm, strand, pos, cnt in args:
             key = '_'.join([chrm,strand,str(pos)])
             predictors = get_predictors_for_polya_site( 
@@ -742,9 +743,9 @@ def get_RNAseq_densities( all_reads, polyAs ):
                 sites.append( (chrm, strand, pos, cnt) )
     
     if VERBOSE: 
-        print >> sys.stderr, \
+        config.log_statement(
             "Finding RNASeq read coverage around poly(A) sites with %i threads"\
-                % NTHREADS
+                % NTHREADS)
     if NTHREADS == 1:
         get_RNAseq_density_worker( reads, sites, sites_lock, dense )
     else:
@@ -753,7 +754,7 @@ def get_RNAseq_densities( all_reads, polyAs ):
         p = Pool(NTHREADS)
         p.apply( get_RNAseq_density_worker, all_args )
     
-    if VERBOSE: print "FINISHED finding poly(A) coverage"
+    if VERBOSE: config.log_statement("FINISHED finding poly(A) coverage")
     
     return dict(dense), header
 
@@ -847,7 +848,7 @@ def fit_forests( X_pos, X_neg_set, total_sets, size_train, size_test ):
         FN = sum(test[:size_test[0]]==0)/float(size_test[0])
         FP = sum(test[size_test[0]:]==1)/float(sum(size_test[1:]))
         Errs.append([FN,FP])
-        print >>sys.stderr, FN, FP, time.time()-t1
+        config.log_statement(FN, FP, time.time()-t1)
     import pdb; pdb.set_trace()
     return Forests, Errs
 
@@ -905,11 +906,11 @@ def main():
     reads = RNAseqReads( rnaseq_bam_fname ).init(reverse_read_strand=True)
 
     # load in the polyA reads
-    if VERBOSE: print >> sys.stderr, "Loading poly(A) reads"
+    if VERBOSE: config.log_statement("Loading poly(A) reads")
     polyA_reads_D = polyA_gff_2_dict( polyA_reads_fname )
     polyA_reads_I = polyA_dict_2_intersecter( polyA_reads_D )
 
-    if VERBOSE: print >> sys.stderr, "Loading RNAseq densities"
+    if VERBOSE: config.log_statement("Loading RNAseq densities")
     RNA_dense, RNA_header = get_RNAseq_densities( [reads,], polyA_reads_D )
     
     #import pdb; pdb.set_trace()
@@ -918,26 +919,26 @@ def main():
     window = 50
     
     # get local read density
-    if VERBOSE: print >> sys.stderr, "Finding local read density"
+    if VERBOSE: config.log_statement("Finding local read density")
     polyA_density = get_local_read_density(polyA_reads_D, polyA_reads_I)
 
     # load in the reference GTF
-    if VERBOSE: print >> sys.stderr, "Loading reference GTF"
+    if VERBOSE: config.log_statement("Loading reference GTF")
     Introns_Sect, Introns_Dict, Exons_Sect, Exons_Dict, CDSs_Sect, CDSs_Dict = (
         gtf_2_intersecters_and_dicts( annotation_fname ) )
 
     # load in the cDNA polyA ends
-    if VERBOSE: print >> sys.stderr, "Loading Gold polyA sites"
+    if VERBOSE: config.log_statement("Loading Gold polyA sites")
     cDNA_polyA_D = polyA_gff_2_dict( cDNA_tes_fname )
     cDNA_polyA_I = polyA_dict_2_intersecter( cDNA_polyA_D )
     #cDNA_density = get_local_read_density(cDNA_polyA_D, cDNA_polyA_I)
 
     # purify cDNAs to remove those that overlap CDSs:
-    if VERBOSE: print >> sys.stderr, "Filtering Gold polyAs that overlap CDSs"
+    if VERBOSE: config.log_statement("Filtering Gold polyAs that overlap CDSs")
     cDNA_polyA_noCDS_D = remove_overlapping_elements( 
             cDNA_polyA_D, CDSs_Sect, window )
 
-    if VERBOSE: print >> sys.stderr, "Find polyAs that intersect gold set"
+    if VERBOSE: config.log_statement("Find polyAs that intersect gold set")
     # get a set of "positive", polyA reads that we believe
     polyA_reads_cDNA_ends_D = get_overlapping_elements( 
             polyA_reads_D, cDNA_polyA_I, window )
@@ -946,10 +947,10 @@ def main():
             polyA_reads_cDNA_ends_D, CDSs_Sect, window )
 
     # load in the reference genome indexed by chrm
-    if VERBOSE: print >> sys.stderr, "Loading reference genome"
+    if VERBOSE: config.log_statement("Loading reference genome")
     FA = parse_fasta( genome_fname )
 
-    if VERBOSE: print >> sys.stderr, "Extracting reference sequence"
+    if VERBOSE: config.log_statement("Extracting reference sequence")
     # extract genome sequences around cDNA polyA ends that don't overlap CDSs
     cDNA_polyA_noCDS_seqs = extract_genome_sequence( 
             FA, cDNA_polyA_noCDS_D, window )
@@ -960,7 +961,7 @@ def main():
     X_polyA_cDNA, header,point_names_polyA_cDNA = extract_covariates_from_seqs( 
             polyA_reads_cDNA_noCDS_seqs, 50, polyA_density,RNA_dense,RNA_header)
 
-    if VERBOSE: print >> sys.stderr, "Finding negative polya set"
+    if VERBOSE: config.log_statement("Finding negative polya set")
     # 1.a) get a set of introns that overlap no exons, TESs in these 
     # should be largely rubbish
     pure_introns_I = purify_introns( Introns_Dict, Exons_Sect )
@@ -972,7 +973,7 @@ def main():
     # find the polyA reads that fall in CDSs
     polyA_CDS_reads_D = get_overlapping_elements( polyA_reads_D, CDSs_Sect, 0 )
 
-    if VERBOSE: print >> sys.stderr, "Finding negative polya's genome sequence"
+    if VERBOSE: config.log_statement("Finding negative polya's genome sequence")
     # extract sequences corresponding to negatives
     polyA_CDS_reads_seqs = extract_genome_sequence( 
             FA, polyA_CDS_reads_D, window )
@@ -986,7 +987,7 @@ def main():
     import pdb; pdb.set_trace()
 
     # fit the forests:
-    if VERBOSE: print >> sys.stderr, "Fitting the random forest"
+    if VERBOSE: config.log_statement("Fitting the random forest")
     Forests, Errs = fit_forests( X_polyA_cDNA, [X_polyA_CDS, X_polyA_intronic], 
                                  3, [2000, 2000, 800], [2000, 2000, 800] )
 
@@ -996,7 +997,7 @@ def main():
             polyA_reads_seqs, 100, polyA_density, RNA_dense, RNA_header )
 
     # do all the predictions for each forest
-    if VERBOSE: print >> sys.stderr, "Predicting from forest"
+    if VERBOSE: config.log_statement("Predicting from forest")
     preds = []
     L = len(Forests)
     fl = 1
@@ -1011,7 +1012,7 @@ def main():
             all_preds[i] = 1
 
 
-    if VERBOSE: print >> sys.stderr, "Aggregatong and writing good polya to output file"
+    if VERBOSE: config.log_statement("Aggregatong and writing good polya to output file")
     # collect all the polyA ends that pass prediction
     every_site = {}
     for i,p in enumerate(all_preds):

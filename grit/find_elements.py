@@ -117,9 +117,9 @@ class SpliceGraph(nx.DiGraph):
 
 def find_cage_peak_bins_in_gene( gene, cage_reads, rnaseq_reads ):
     rnaseq_cov = gene.find_coverage( rnaseq_reads )
-    print rnaseq_cov
+    config.log_statement(rnaseq_cov)
     cage_cov = gene.find_coverage( cage_reads)
-    print cage_cov
+    config.log_statement(cage_cov)
     assert False
     # threshold the CAGE data. We assume that the CAGE data is a mixture of 
     # reads taken from actually capped transcripts, and random transcribed 
@@ -340,7 +340,7 @@ def iter_retained_intron_connected_exons(
             for x in nx.all_simple_paths(
                     graph, left, right, max_num_exons-cntr+1):
                 cntr += 1
-                if max_num_exons != None and cntr > max_num_exons:
+                if max_num_exons is not None and cntr > max_num_exons:
                     raise ValueError, "Too many retained introns"
                 yield (x[0][0], x[-1][1])
     return
@@ -478,7 +478,7 @@ def extract_jns_and_paired_reads_in_gene(gene, reads):
     minus_jns = defaultdict(int)
     
     for region in gene.regions:
-        ( r_pair1_reads, r_pair2_reads, r_plus_jns, r_minus_jns, 
+        ( r_pair1_reads, r_pair2_reads, r_plus_jns, r_minus_jns, _, _,
           ) = extract_jns_and_reads_in_region(
             (gene.chrm, gene.strand, region.start, region.stop), reads)
         for jn, cnt in r_plus_jns.iteritems(): 
@@ -561,9 +561,9 @@ def build_splice_graph_and_binned_reads_in_gene(
         gene, 
         rnaseq_reads, tss_reads, tes_reads, ref_elements ):
     assert isinstance( gene, GeneElements )
-    config.log_statement( 
-        "Extracting reads and jns in Chrm %s Strand %s Pos %i-%i" %
-        (gene.chrm, gene.strand, gene.start, gene.stop) )
+    #config.log_statement( 
+        #"Extracting reads and jns in Chrm %s Strand %s Pos %i-%i" %
+        #(gene.chrm, gene.strand, gene.start, gene.stop) )
     
     # initialize the cage peaks with the reference provided set
     tss_regions = [ Bin(pk_start, pk_stop, 
@@ -583,7 +583,7 @@ def build_splice_graph_and_binned_reads_in_gene(
         observed_jns, opp_strand_jns, set(ref_elements['introns']))
     # add in connectivity junctions
     for distal_reads in (tss_reads, tes_reads):
-        if distal_reads == None: continue
+        if distal_reads is None: continue
         for jn, cnt, entropy in files.junctions.load_junctions_in_bam(
               distal_reads, 
               [ (gene.chrm, gene.strand, r.start, r.stop) for r in gene.regions]
@@ -593,9 +593,9 @@ def build_splice_graph_and_binned_reads_in_gene(
     # add in reference junctions
     for jn in ref_elements['introns']: jns[jn] += observed_jns[jn]
         
-    config.log_statement( 
-        "Building exon segments in Chrm %s Strand %s Pos %i-%i" %
-        (gene.chrm, gene.strand, gene.start, gene.stop) )
+    #config.log_statement( 
+        #"Building exon segments in Chrm %s Strand %s Pos %i-%i" %
+        #(gene.chrm, gene.strand, gene.start, gene.stop) )
     
     # build the pseudo exon set
     segment_bnds = set([gene.start, gene.stop+1])
@@ -617,7 +617,7 @@ def build_splice_graph_and_binned_reads_in_gene(
         segment_bnds.add(stop+1)
         segment_bnd_labels[stop+1].add('R_JN' if gene.strand == '+' else 'D_JN')
     
-    if tss_reads != None:
+    if tss_reads is not None:
         control_cov = build_control_in_gene(
             gene, paired_rnaseq_reads, sorted(segment_bnds), 
             '5p' if gene.strand == '+' else '3p')
@@ -629,12 +629,12 @@ def build_splice_graph_and_binned_reads_in_gene(
                 gene,
                 **config.TSS_call_peaks_tuning_params):
             tss_regions.append(TranscriptBoundaryBin(
-                gene.start+pk_start, gene.start+pk_stop-1, 
+                gene.start+pk_start, max(gene.start+pk_start, gene.start+pk_stop-1), 
                 "CAGE_PEAK_START", "CAGE_PEAK_STOP", "CAGE_PEAK",
                 peak_cov
                 ).set_tpm(tss_reads.num_reads))
     
-    if tes_reads != None:
+    if tes_reads is not None:
         control_cov = build_control_in_gene(
             gene, paired_rnaseq_reads, sorted(segment_bnds), 
             '3p' if gene.strand == '+' else '5p')
@@ -645,7 +645,7 @@ def build_splice_graph_and_binned_reads_in_gene(
                 gene,
                 **config.TES_call_peaks_tuning_params):
             tes_regions.append(TranscriptBoundaryBin(
-                gene.start+pk_start, gene.start+pk_stop-1, 
+                gene.start+pk_start, max(gene.start+pk_start, gene.start+pk_stop-1), 
                 "POLYA_PEAK_START", "POLYA_PEAK_STOP", "POLYA",
                 peak_cov,
                 ).set_tpm(tes_reads.num_reads))
@@ -749,15 +749,15 @@ def build_splice_graph_and_binned_reads_in_gene(
 
 def fast_quantify_segment_expression(gene, splice_graph, 
                                      rnaseq_reads, cage_reads, polya_reads):
-    config.log_statement( 
-        "FAST Quantifying segment expression in Chrm %s Strand %s Pos %i-%i" %
-        (gene.chrm, gene.strand, gene.start, gene.stop) )
+    #config.log_statement( 
+        #"FAST Quantifying segment expression in Chrm %s Strand %s Pos %i-%i" %
+        #(gene.chrm, gene.strand, gene.start, gene.stop) )
 
     quantiles = [0.01, 0.5, 1-.01]
     avg_read_len = 0
     for ((rg, (r1_len,r2_len)), (fl_dist, marginal_frac) 
              ) in rnaseq_reads.fl_dists.iteritems():
-        avg_read_len += marginal_frac*(r1_len + r2_len)/2
+        avg_read_len += marginal_frac*(r1_len[0] + r1_len[1] + r2_len[0] + r2_len[1])/4
     
     rnaseq_cov = gene.find_coverage(rnaseq_reads)
     for element_i, data in splice_graph.nodes(data=True):
@@ -859,7 +859,7 @@ def quantify_segment_expression(gene, splice_graph, binned_reads ):
     segment_bins, jn_bins = [], []
     for j, (element, transcripts) in enumerate(
             segment_transcripts_map.iteritems()):
-        print element, transcripts
+        config.log_statement((element, transcripts))
         continue
     assert False
     if True:
@@ -959,9 +959,9 @@ def determine_exon_type(left_label, right_label):
     return 'EXON'
 
 def build_exons_from_exon_segments(gene, splice_graph, max_min_expression):
-    config.log_statement( 
-        "Building Exons from Segments in Chrm %s Strand %s Pos %i-%i" %
-        (gene.chrm, gene.strand, gene.start, gene.stop) )
+    #config.log_statement( 
+        #"Building Exons from Segments in Chrm %s Strand %s Pos %i-%i" %
+        #(gene.chrm, gene.strand, gene.start, gene.stop) )
 
     exon_segments = [ data['bin']
                       for node_id, data in splice_graph.nodes(data=True)
@@ -1029,8 +1029,8 @@ def find_exons_in_gene( gene, contig_lens, ofp,
             if gene.base_is_in_gene(start) and gene.base_is_in_gene(stop):
                 gene_ref_elements[key].append((start, stop))
 
-    config.log_statement( "Finding Exons in Chrm %s Strand %s Pos %i-%i" %
-                   (gene.chrm, gene.strand, gene.start, gene.stop) )
+    #config.log_statement( "Finding Exons in Chrm %s Strand %s Pos %i-%i" %
+                   #(gene.chrm, gene.strand, gene.start, gene.stop) )
     
     # build the transcribed segment splice graph, and bin observe rnasseq reads 
     # based upon this splice graph in this gene.
@@ -1084,8 +1084,8 @@ def find_exons_worker( (genes_queue, genes_queue_lock, n_threads_running),
                        ofp, contig_lens, ref_elements, ref_elements_to_include,
                        rnaseq_reads, cage_reads, polya_reads ):
     rnaseq_reads = rnaseq_reads.reload()
-    cage_reads = cage_reads.reload() if cage_reads != None else None
-    polya_reads = polya_reads.reload() if polya_reads != None else None
+    cage_reads = cage_reads.reload() if cage_reads is not None else None
+    polya_reads = polya_reads.reload() if polya_reads is not None else None
     
     while True:
         # try to get a gene
@@ -1095,22 +1095,21 @@ def find_exons_worker( (genes_queue, genes_queue_lock, n_threads_running),
         
         # if there is no gene it process, but threads are still running, then 
         # wait for the queue to fill or the process to finish
-        if gene == None and n_threads_running.value > 0:
-            config.log_statement( 
-                "Waiting for gene to process (%i)" % n_threads_running.value)
+        if gene is None and n_threads_running.value > 0:
+            #config.log_statement( 
+                #"Waiting for gene to process (%i)" % n_threads_running.value)
             time.sleep(0.1)
             continue
         # otherwise, take a lock to make sure that the queue is empty and no 
         # threads are running. If so, then return
-        elif gene == None:
+        elif gene is None:
             with genes_queue_lock:
                 if len(genes_queue) == 0 and n_threads_running.value == 0:
-                    config.log_statement( "" )
                     return
                 else: continue
 
         # otherwise, we have a gene to process, so process it
-        assert gene != None
+        assert gene is not None
         with genes_queue_lock: n_threads_running.value += 1
 
         # find the exons and genes
@@ -1125,7 +1124,7 @@ def find_exons_worker( (genes_queue, genes_queue_lock, n_threads_running),
             rv = None
         
         # if the return value is new genes, then add these to the queue
-        if rv != None:
+        if rv is not None:
             with genes_queue_lock:
                 for gene in rv:
                     genes_queue.append( gene )
@@ -1174,9 +1173,9 @@ def find_exons( contig_lens, gene_bndry_bins, ofp,
                 rnaseq_reads, cage_reads, polya_reads,
                 ref_genes, ref_elements_to_include,
                 junctions=None, nthreads=None):
-    assert not any(ref_elements_to_include) or ref_genes != None
-    if nthreads == None: nthreads = config.NTHREADS
-    assert junctions == None
+    assert not any(ref_elements_to_include) or ref_genes is not None
+    if nthreads is None: nthreads = config.NTHREADS
+    assert junctions is None
     
     ref_elements = extract_reference_elements( 
         ref_genes, ref_elements_to_include )
@@ -1205,8 +1204,8 @@ def find_exons( contig_lens, gene_bndry_bins, ofp,
     if nthreads == 1:
         find_exons_worker(*args)
     else:
-        config.log_statement("Waiting on exon finding children (%i/%i remain)"%(
-                len(genes_queue), n_genes))
+        #config.log_statement("Waiting on exon finding children (%i/%i remain)"%(
+                #len(genes_queue), n_genes))
         ps = []
         for i in xrange( nthreads ):
             p = multiprocessing.Process(target=find_exons_worker, args=args)
@@ -1214,14 +1213,13 @@ def find_exons( contig_lens, gene_bndry_bins, ofp,
             ps.append( p )
         
         while True:
-            config.log_statement(
-                "Waiting on exon finding children (%i/%i remain)"%(
-                    len(genes_queue), n_genes))
+            #config.log_statement(
+                #"Waiting on exon finding children (%i/%i remain)"%(
+                    #len(genes_queue), n_genes))
             if all( not p.is_alive() for p in ps ):
                 break
             time.sleep( 1.0 )
 
-    config.log_statement( "" )    
     return
 
 def find_elements( promoter_reads, rnaseq_reads, polya_reads,
@@ -1236,7 +1234,7 @@ def find_elements( promoter_reads, rnaseq_reads, polya_reads,
         
         contig_lens = dict(zip(*get_contigs_and_lens( 
             [ reads for reads in [rnaseq_reads, promoter_reads, polya_reads]
-              if reads != None ] )))
+              if reads is not None ] )))
         
         """
         # extract reference elements. This doesnt work for a few reasons,

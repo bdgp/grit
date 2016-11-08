@@ -101,7 +101,7 @@ class Gene( object ):
         return sorted( boundaries )
     
     def write_to_file(self, ofname=None):
-        if ofname == None:
+        if ofname is None:
             opdir = tempfile.mkdtemp()
             ofname = os.path.join(opdir, self.id + ".gene")
         with open(ofname, "w") as ofp:
@@ -195,7 +195,7 @@ class Transcript( object ):
                                izip(exon_bnds[1:-2:2], 
                                     exon_bnds[2:-1:2]) ])
         
-        self.is_protein_coding = ( cds_region != None )
+        self.is_protein_coding = ( cds_region is not None )
         self.coding_sequence = None
         
         self.cds_region = cds_region
@@ -213,7 +213,7 @@ class Transcript( object ):
         
         self._seq = None
         
-        if cds_region != None:
+        if cds_region is not None:
             self.add_cds_region( cds_region, coding_sequence )
     
     def add_cds_region( self, cds_region, coding_sequence=None ):
@@ -236,7 +236,7 @@ class Transcript( object ):
             self.stop_codon, self.start_codon = us_codon, ds_codon
         
     def __hash__( self ):
-        if self.cds_region != None:
+        if self.cds_region is not None:
             return hash(( self.chrm, self.strand, 
                           self.exons, tuple(self.cds_region) ))
         else:
@@ -294,16 +294,16 @@ class Transcript( object ):
         return trans_coord + self.start + insert_len
     
     def build_gtf_lines( self, meta_data, source='.'):
-        assert self.gene_id != None
-        assert self.id != None
-        if self.gene_name != None and self.gene_name != self.gene_id:
+        assert self.gene_id is not None
+        assert self.id is not None
+        if self.gene_name is not None and self.gene_name != self.gene_id:
             meta_data['gene_name'] = self.gene_name
-        if self.name != None and self.name != self.id:
+        if self.name is not None and self.name != self.id:
             meta_data['transcript_name'] = self.name
         ret_lines = []
         def build_lines_for_feature( exons, feature, is_CDS=False ):
             current_frame = 0
-            score = str(self.score) if self.score != None else '.'
+            score = str(self.score) if self.score is not None else '.'
             for start, stop in exons:
                 region = GenomicInterval( self.chrm, self.strand, start, stop )
                 frame = current_frame if is_CDS else '.'
@@ -314,18 +314,18 @@ class Transcript( object ):
                 current_frame = ( current_frame + stop - start + 1 )%3
             return
         
-        if self.promoter != None:
+        if self.promoter is not None:
             ret_lines.extend( build_lines_for_feature( 
                     [self.promoter,], 'promoter', False ) )
 
         ret_lines.extend( build_lines_for_feature( 
                 self.exons, 'exon', False ) )
     
-        if self.polya_region != None:
+        if self.polya_region is not None:
             ret_lines.extend( build_lines_for_feature( 
                     [self.polya_region,], 'polya', False ) )
         
-        if self.cds_region != None:
+        if self.cds_region is not None:
             us_exons, ds_exons = self.fp_utr_exons, self.tp_utr_exons
             us_label, ds_label = 'five_prime_UTR', 'three_prime_UTR'
             if self.strand == '-': 
@@ -368,10 +368,10 @@ class Transcript( object ):
             contig_name = fix_chrm_name_for_ucsc(contig_name)
         return [
             t.id, # tracking ID
-            '-' if t.class_code == None else t.class_code,  # class code
-            '-' if t.ref_trans == None else t.ref_trans, # nearest ref id
+            '-' if t.class_code is None else t.class_code,  # class code
+            '-' if t.ref_trans is None else t.ref_trans, # nearest ref id
             t.gene_id, # gene unique id
-            '-' if t.ref_gene == None else t.ref_gene, # nearest reference gene
+            '-' if t.ref_gene is None else t.ref_gene, # nearest reference gene
             '-', # TSS ID
             "%s:%s:%i-%i" % (contig_name, t.strand, t.start, t.stop), 
             str(t.calc_length()) # transcript length
@@ -379,7 +379,7 @@ class Transcript( object ):
     
     def find_promoter(self, inferred_promoter_length=50):
         # if there is an annotated promoter, then return it
-        if self.promoter != None:
+        if self.promoter is not None:
             return self.promoter
         
         # otherwise, return *up to* the first inferred_promoter_length bases
@@ -397,7 +397,7 @@ class Transcript( object ):
 
     def find_polya_region(self, inferred_polya_region_length=20):
         # if there is an annotated polya region, then return it
-        if self.polya_region != None:
+        if self.polya_region is not None:
             return self.polya_region
         
         # otherwise, return *up to* the first inferred_promoter_length bases

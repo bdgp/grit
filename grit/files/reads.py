@@ -107,7 +107,7 @@ def get_read_group( r1, r2 ):
     if r1_read_group == r2_read_group:
         return r1_read_group
     else: 
-        print "WARNING: Read groups do not match."
+        config.log_statement("WARNING: Read groups do not match.")
         return None
 
 
@@ -220,7 +220,7 @@ def determine_read_pair_params( bam_obj, min_num_reads_to_check=50000,
     elif float(paired_cnts['diff_strand'])/paired_cnts['same_strand'] > 5:
         return ('paired', 'diff_strand')
     
-    print >> sys.stderr, "Paired Cnts:", paired_cnts, "Num Reads", num_observed_reads
+    config.log_statement("Paired Cnts:", paired_cnts, "Num Reads", num_observed_reads)
     raise ValueError, "Reads appear to be a mix of unpaired and paired reads that are both on the same and different strands. (%s)" % paired_cnts
 
 def read_pairs_are_on_same_strand( bam_obj, min_num_reads_to_check=50000, 
@@ -264,7 +264,7 @@ def iter_coverage_intervals_for_read(read):
         elif contig_type == 4 or contig_type == 5:
             pass
         else:
-            print >> sys.stderr, "Unrecognized cigar format:", read.cigar
+            config.log_statement("Unrecognized cigar format:", read.cigar)
 
     return
 
@@ -299,7 +299,7 @@ def extract_jns_and_reads_in_region(
 
     num_unique_reads = 0.0
     
-    config.log_statement("Finding reads in %s" % str((chrm, strand, r_start, r_stop)))        
+    #config.log_statement("Finding reads in %s" % str((chrm, strand, r_start, r_stop)))        
     for n_obs_reads, (read, rd_strand) in enumerate(reads.iter_reads_and_strand(
             chrm, r_start, r_stop+1)):
         # break if we've surpassed the read
@@ -383,7 +383,7 @@ def iter_paired_reads(p1_reads, p2_reads, fl_dist=None):
                 # if there is no fragment length data, then 
                 # assume that the fragment sizes are all equally likely
                 post_prb = r1_data.map_prb*r2_data.map_prb
-                if fl_dist != None: assert False
+                if fl_dist is not None: assert False
                 post_prb_sum += post_prb
                 paired_reads.append( [
                         qname, r1_data.strand, r1_data.read_grp, flen, 
@@ -414,7 +414,7 @@ def get_contigs_and_lens( reads_files ):
                     "Chromosome lengths do not match between bam files"
             bam_contigs.add( clean_chr_name(ref_name) )
         
-        if contigs == None:
+        if contigs is None:
             contigs = bam_contigs
         else:
             contigs = contigs.intersection( bam_contigs )
@@ -478,7 +478,7 @@ class MergedReads( object ):
         self.fl_dists = all_fl_dists[0]
         assert all(fl_dist == self.fl_dists for fl_dist in all_fl_dists)
 
-        if all(reads.num_reads == None for reads in all_reads):
+        if all(reads.num_reads is None for reads in all_reads):
             self.num_reads = None
         else:
             self.num_reads = sum(reads.num_reads for reads in all_reads)
@@ -636,7 +636,7 @@ class Reads( pysam.Samfile ):
 
     def iter_reads( self, chrm, strand, start=None, stop=None ):
         for read, rd_strand in self.iter_reads_and_strand( chrm, start, stop  ):
-            if strand == None or rd_strand == '.' or rd_strand == strand:
+            if strand is None or rd_strand == '.' or rd_strand == strand:
                 yield read        
         return
 
@@ -664,18 +664,18 @@ class Reads( pysam.Samfile ):
             # if there is no mate, skip this read
             except KeyError:
                 if DEBUG:
-                    print "No mate: ", read1.pos, read1.aend-1
+                    config.log_statement("No mate: ", read1.pos, read1.aend-1)
                 continue
 
-            assert read1.query == None or \
+            assert read1.query is None or \
                    ( read1.alen == read1.aend - read1.pos ) \
                    or ( len( read1.cigar ) > 1 )
-            assert read2.query == None or \
+            assert read2.query is None or \
                    ( read2.alen == read2.aend - read2.pos ) \
                    or ( len( read2.cigar ) > 1 )
             
             #if read1.qlen != read2.qlen:
-            #    print( "ERROR: unequal read lengths %i and %i\n", \
+            #    config.log_statement( "ERROR: unequal read lengths %i and %i\n", \
             #           read1.qlen, read2.qlen )
             #    continue
 
@@ -689,7 +689,7 @@ class Reads( pysam.Samfile ):
         full_region_len = stop - start + 1
         cvg = numpy.zeros(full_region_len)
         for rd in self.iter_reads( chrm, strand, start, stop ):
-            if read_pair != None:
+            if read_pair is not None:
                 if read_pair==1 and not rd.is_read1: continue
                 if read_pair==2 and not rd.is_read2: continue
             for region in iter_coverage_regions_for_read( 
@@ -855,7 +855,7 @@ class CAGEReads(Reads):
     
     def build_read_coverage_array( self, chrm, strand, start, stop, 
                                    read_pair=None ):
-        assert read_pair == None
+        assert read_pair is None
         full_region_len = stop - start + 1
         cvg = numpy.zeros(full_region_len)
         for rd in self.fetch( chrm, start, stop ):
@@ -884,7 +884,7 @@ class RAMPAGEReads(Reads):
         reads_are_stranded = True
         
         # reads strandedness
-        if pairs_are_opp_strand == None:
+        if pairs_are_opp_strand is None:
             pairs_are_opp_strand = (not read_pairs_are_on_same_strand( self ))
 
         if reverse_read_strand in ('auto', None):
@@ -919,7 +919,7 @@ class RAMPAGEReads(Reads):
     
     def build_read_coverage_array( self, chrm, strand, start, stop,
                                    read_pair=None ):
-        assert read_pair == None
+        assert read_pair is None
         full_region_len = stop - start + 1
         cvg = numpy.zeros(full_region_len)
         for rd in self.fetch( chrm, start, stop ):
@@ -951,13 +951,13 @@ class PolyAReads(Reads):
         reads_are_stranded = True
         
         # reads strandedness
-        if pairs_are_opp_strand == None:
+        if pairs_are_opp_strand is None:
             pairs_are_opp_strand = (not read_pairs_are_on_same_strand( self ))
 
         if reverse_read_strand in ('auto', None):
             if ref_genes in([], None): 
                 raise ValueError, "Determining reverse_read_strand requires reference genes"
-            reverse_read_strand_params = Reads.determine_read_strand_param(
+            reverse_read_strand_params = determine_read_strand_params(
                 self, ref_genes, pairs_are_opp_strand, 'tes_exon',
                 300, 50 )
             assert 'stranded' in reverse_read_strand_params
@@ -983,7 +983,7 @@ class PolyAReads(Reads):
     
     def build_read_coverage_array( self, chrm, strand, start, stop,
                                    read_pair=None ):
-        assert read_pair == None
+        assert read_pair is None
         
         full_region_len = stop - start + 1
         cvg = numpy.zeros(full_region_len)
@@ -1020,7 +1020,7 @@ class ChIPSeqReads(Reads):
 
     def build_unpaired_reads_fragment_coverage_array( 
             self, chrm, start, stop, window_size=None ):
-        if window_size == None:
+        if window_size is None:
             window_size = self.frag_len
         assert stop >= start
         full_region_len = stop - start + 1
@@ -1065,7 +1065,7 @@ class ChIPSeqReads(Reads):
         
         reads_are_stranded = True
         
-        if frag_len_dist == None:
+        if frag_len_dist is None:
             frag_len_dist = build_normal_density(
                 fl_min=100, fl_max=200, mean=150, sd=25)
         self.frag_len_dist = frag_len_dist

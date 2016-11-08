@@ -146,7 +146,7 @@ def write_gene_to_gtf( ofp, gene ):
         
         if config.FIX_CHRM_NAMES_FOR_UCSC:
             transcript.chrm = fix_chrm_name_for_ucsc(transcript.chrm)
-        assert transcript.gene_id != None
+        assert transcript.gene_id is not None
         lines.append( transcript.build_gtf_lines(
                 meta_data, source="grit") + "\n" )
     
@@ -161,9 +161,9 @@ def write_gene_to_tracking_file( ofp, gene):
         contig_name = fix_chrm_name_for_ucsc(contig_name)
     
     for t in gene.transcripts:
-        if t.gene_name != None:
+        if t.gene_name is not None:
             gene_short_name = t.gene_name
-        elif t.ref_gene != None:
+        elif t.ref_gene is not None:
             gene_short_name = t.ref_gene
         else:
             gene_short_name = '-'
@@ -172,14 +172,14 @@ def write_gene_to_tracking_file( ofp, gene):
             # tracking ID
             (t.id).ljust(20), 
             # class code
-            ('-' if t.ref_match_class_code == None 
+            ('-' if t.ref_match_class_code is None 
              else t.ref_match_class_code).ljust(10), 
             # nearest ref id
-            ('-' if t.ref_trans == None else t.ref_trans).ljust(20),
+            ('-' if t.ref_trans is None else t.ref_trans).ljust(20),
             # gene unique id
             (t.gene_id).ljust(20), 
             # gene short name
-            ('-' if t.gene_name == None else t.gene_name).ljust(20),
+            ('-' if t.gene_name is None else t.gene_name).ljust(20),
             # TSS ID
             ('-').ljust(10), 
             ("%s:%s:%i-%i"%(contig_name, t.strand, t.start, t.stop)).ljust(30),
@@ -247,12 +247,12 @@ def rename_transcripts(gene, ref_genes):
                     best_match_score = score
                     best_match = ref_t
 
-        if best_match == None: continue
+        if best_match is None: continue
         t.ref_gene = best_match.gene_id
         t.ref_trans = best_match.id
         t.ref_match_class_code = None
         
-        t.gene_name = ( t.ref_gene if best_match.gene_name == None 
+        t.gene_name = ( t.ref_gene if best_match.gene_name is None 
                         else best_match.gene_name )
         if len(introns)  == len(best_match.introns) == best_match_score[0] and \
                 best_match_score[1] > -400:
@@ -298,11 +298,11 @@ def build_gene(elements, fasta=None, ref_genes=None):
                 elements.chrm, elements.strand, 
                 gene_min, gene_max, transcripts)
 
-    if fasta != None:
+    if fasta is not None:
         gene.transcripts = find_cds_for_gene( 
             gene, fasta, only_longest_orf=True )
     
-    if ref_genes != None:
+    if ref_genes is not None:
         gene = rename_transcripts(gene, ref_genes)
     
     return gene
@@ -318,16 +318,16 @@ def build_and_write_gene(gene_elements, output,
         gene_elements.tss_exons, gene_elements.tes_exons,
         gene_elements.promoter, gene_elements.polyas))
     try:
-        config.log_statement(
-            "Building transcripts and ORFs for %s (%s:%s:%i-%i)" % (
-                gene_elements.id, gene_elements.chrm, gene_elements.strand, 
-                start, stop) )
+        #config.log_statement(
+            #"Building transcripts and ORFs for %s (%s:%s:%i-%i)" % (
+                #gene_elements.id, gene_elements.chrm, gene_elements.strand, 
+                #start, stop) )
         
         gene = build_gene(gene_elements, fasta, ref_genes)
-        if gene == None: 
+        if gene is None: 
             return
-        config.log_statement(
-            "FINISHED Building transcript and ORFs for Gene %s" % gene.id)
+        #config.log_statement(
+            #"FINISHED Building transcript and ORFs for Gene %s" % gene.id)
 
         # dump a pickle of the gene to a temp file, and set that in the 
         # output manager
@@ -360,13 +360,12 @@ def build_transcripts_worker( elements,
                               gtf_ofp, tracking_ofp,
                               fasta_fp, ref_genes ):
     # if appropriate, open the fasta file
-    if fasta_fp != None: fasta = Fastafile(fasta_fp.name)
+    if fasta_fp is not None: fasta = Fastafile(fasta_fp.name)
     else: fasta = None
     while True:
-        config.log_statement("Waiting for gene to process. (%i)" % elements.qsize())
+        #config.log_statement("Waiting for gene to process. (%i)" % elements.qsize())
         gene_elements = elements.get()
         if gene_elements == 'FINISHED':
-            config.log_statement("")
             return
         build_and_write_gene( gene_elements, output, 
                               gtf_ofp, tracking_ofp,
@@ -390,7 +389,7 @@ def add_elements_for_contig_and_strand((contig, strand),
                                        grpd_exons, elements, gene_id_cntr,
                                        output, gtf_ofp, tracking_ofp, 
                                        fasta_fp, ref_genes):
-    if fasta_fp != None: fasta = Fastafile(fasta_fp.name)
+    if fasta_fp is not None: fasta = Fastafile(fasta_fp.name)
     else: fasta = None
     
     config.log_statement( 
@@ -434,8 +433,8 @@ def add_elements_for_contig_and_strand((contig, strand),
                 "Clustering elements into genes for %s:%s" % ( 
                     contig, strand ) )
     
-    config.log_statement( 
-        "FINISHED Clustering elements into genes for %s:%s" % (contig, strand))
+    #config.log_statement( 
+        #"FINISHED Clustering elements into genes for %s:%s" % (contig, strand))
     return    
 
 def add_elements_for_contig_and_strand_worker(

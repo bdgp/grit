@@ -124,7 +124,7 @@ def parse_gff_line( line, fix_chrm=True ):
 
 def parse_gtf_line( line, fix_chrm=True ):
     gffl = parse_gff_line( line, fix_chrm=fix_chrm )
-    if gffl == None: return None
+    if gffl is None: return None
     
     # get gene and transcript name if parsing a gtf line 
     # else it is a gff line and does not have gene or trans names
@@ -173,21 +173,21 @@ def load_transcript_from_gtf_data(transcript_lines):
     CDS_start, CDS_stop = None, None
     for line in transcript_lines:
         scores.add( line.score )
-        if fpk == None and 'fpk' in line.meta_data: 
+        if fpk is None and 'fpk' in line.meta_data: 
             fpk = float(line.meta_data['FPK'])
-        if fpkm == None and 'FPKM' in line.meta_data: 
+        if fpkm is None and 'FPKM' in line.meta_data: 
             fpkm = float(line.meta_data['FPKM'])
-        if fpkm == None and 'fpkm' in line.meta_data: 
+        if fpkm is None and 'fpkm' in line.meta_data: 
             fpkm = float(line.meta_data['fpkm'])
-        if conf_lo == None and 'conf_lo' in line.meta_data: 
+        if conf_lo is None and 'conf_lo' in line.meta_data: 
             conf_lo = float(line.meta_data['conf_lo'])
-        if conf_hi == None and 'conf_hi' in line.meta_data: 
+        if conf_hi is None and 'conf_hi' in line.meta_data: 
             conf_hi = float(line.meta_data['conf_hi'])
-        if frac == None and 'frac' in line.meta_data: 
+        if frac is None and 'frac' in line.meta_data: 
             frac = float(line.meta_data['frac'])
-        if name == None and 'transcript_name' in line.meta_data: 
+        if name is None and 'transcript_name' in line.meta_data: 
             name = line.meta_data['transcript_name']
-        if gene_name == None and 'gene_name' in line.meta_data: 
+        if gene_name is None and 'gene_name' in line.meta_data: 
             gene_name = line.meta_data['gene_name']
         
         # subtract one to make the coordinates 0 based
@@ -197,9 +197,9 @@ def load_transcript_from_gtf_data(transcript_lines):
         elif line.feature == 'CDS':
             exons.append( (line_start, line_stop) )
             CDS_start = line_start \
-                if CDS_start == None or line_start < CDS_start else CDS_start
+                if CDS_start is None or line_start < CDS_start else CDS_start
             CDS_stop = line_stop \
-                if CDS_stop == None or line_stop > CDS_stop else CDS_stop
+                if CDS_stop is None or line_stop > CDS_stop else CDS_stop
         elif line.feature == 'promoter':
             promoter = (line_start, line_stop)
         elif line.feature == 'polya':
@@ -208,7 +208,7 @@ def load_transcript_from_gtf_data(transcript_lines):
     if len( exons ) == 0:
         return None
     
-    CDS_region = None if CDS_start == None or CDS_stop == None \
+    CDS_region = None if CDS_start is None or CDS_stop is None \
         else (CDS_start, CDS_stop)
     
     score = next(iter(scores)) if len(scores) == 1 else None
@@ -227,7 +227,7 @@ def _load_gene_from_gtf_lines( gene_id, gene_lines, transcripts_data ):
     transcripts = []
     for trans_id, transcript_lines in transcripts_data.iteritems():
         transcript = load_transcript_from_gtf_data(transcript_lines)
-        if transcript == None: continue
+        if transcript is None: continue
         transcripts.append(transcript)
 
     # if there are no gene lines, then get the info from the transcripts
@@ -249,12 +249,12 @@ def _load_gene_from_gtf_lines( gene_id, gene_lines, transcripts_data ):
         gene_name = gene_data.meta_data['gene_name']
         gene_meta_data = gene_data.meta_data
     else:
-        if VERBOSE: print >> sys.stderr, "Skipping '%s': multiple gene lines." % gene_id
+        if VERBOSE: log_statement("Skipping '%s': multiple gene lines." % gene_id)
         return None
     
     if gene_start != min(t.start for t in transcripts ) \
             or gene_stop != max(t.stop for t in transcripts ):
-        if VERBOSE: print >> sys.stderr, "Skipping '%s': gene boundaries dont match the transcript boundaries." % gene_id
+        if VERBOSE: log_statement("Skipping '%s': gene boundaries dont match the transcript boundaries." % gene_id)
         return None
     
     return Gene( gene_id, gene_name, 
@@ -335,8 +335,8 @@ def load_gtf(fname_or_fp, contig=None, strand=None):
         # skip unparseable lines, or lines without gene ids
         if None == data: continue
         if data.gene_id == "": continue
-        if contig != None and data.region.chr != contig: continue
-        if strand != None and data.region.strand != strand: continue
+        if contig is not None and data.region.chr != contig: continue
+        if strand is not None and data.region.strand != strand: continue
         # add gene lines directly to the gene object
         if data.feature == 'gene': 
             gene_lines[data.gene_id][1].append( data )
@@ -355,7 +355,7 @@ def load_gtf(fname_or_fp, contig=None, strand=None):
             if DEBUG: raise
             gene = None
         
-        if gene == None: continue
+        if gene is None: continue
         genes.append( gene )
     
     if isinstance( fname_or_fp, str ):
@@ -373,8 +373,8 @@ def load_next_gene_from_gtf(fp, contig=None, strand=None,
             # skip unparseable lines, or lines without gene ids
             if None == data: continue
             if data.gene_id == "": continue
-            if contig != None and data.region.chr != contig: continue
-            if strand != None and data.region.strand != strand: continue
+            if contig is not None and data.region.chr != contig: continue
+            if strand is not None and data.region.strand != strand: continue
             return data
     
     def set_expression_data(transcript):
@@ -388,9 +388,9 @@ def load_next_gene_from_gtf(fp, contig=None, strand=None,
         for expression_data in all_expression_data:
             try: data = expression_data[transcript.id]
             except KeyError: continue
-            if data.FPKM != None: fpkms.append(data.FPKM)
-            if data.FPKM_lo != None: conf_los.append(data.FPKM_lo)
-            if data.FPKM_hi != None: conf_his.append(data.FPKM_hi)
+            if data.FPKM is not None: fpkms.append(data.FPKM)
+            if data.FPKM_lo is not None: conf_los.append(data.FPKM_lo)
+            if data.FPKM_hi is not None: conf_his.append(data.FPKM_hi)
         
         transcript.fpkm = mean_or_none(fpkms)
         transcript.conf_lo = mean_or_none(conf_los)
@@ -399,7 +399,7 @@ def load_next_gene_from_gtf(fp, contig=None, strand=None,
     # load the first line, and initialize the data structures
     data = load_next_line()
     # if the file is empty, return None
-    if data == None: raise StopIteration, "No more data in fp"
+    if data is None: raise StopIteration, "No more data in fp"
     gene_id = data.gene_id
     gene_lines = []
     transcripts_lines = defaultdict(list)
@@ -410,7 +410,7 @@ def load_next_gene_from_gtf(fp, contig=None, strand=None,
         pos = fp.tell()
         data = load_next_line()
         # if the file is empty, we're done
-        if data == None: break
+        if data is None: break
         # if we've found a new gene, then put the file pointer at the position
         # of the new gene, and then we're done loading lines
         if data.gene_id != gene_id: 
@@ -567,7 +567,7 @@ def iter_gff_lines( regions_iter, grp_id_iter=None, score='.',
     if isinstance( grp_id_iter, str ):
         raise ValueError, "Group ID must be an iterator."
     
-    if grp_id_iter == None:
+    if grp_id_iter is None:
         grp_id_iter = ( str(i) for i in itertools.count(1) )
     
     iters = [ regions_iter, grp_id_iter ] \
@@ -582,7 +582,7 @@ def iter_gtf_lines( regions_iter, gene_id_iter, trans_id_iter,               \
                     grp_id='.', score='.', feature='.', source='.', frame='.', \
                     meta_data_iter=None ):
     # if we didnt provide any additional meta data, then make an empty list iter
-    if meta_data_iter == None:
+    if meta_data_iter is None:
         meta_data_iter = itertools.repeat( [] )
     # build the data iterators, using repeat for defaults
     iters = [ regions_iter, gene_id_iter, trans_id_iter, meta_data_iter ] \

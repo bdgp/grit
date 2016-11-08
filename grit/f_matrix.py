@@ -87,7 +87,7 @@ def build_nonoverlapping_indices( transcripts, exon_boundaries ):
 def simulate_reads_from_exons( n, fl_dist, \
                                read_len, max_num_unmappable_bases, \
                                exon_lengths ):
-    """Set read_len == None to get the full fragment.
+    """Set read_len is None to get the full fragment.
 
     """
     
@@ -112,7 +112,7 @@ def simulate_reads_from_exons( n, fl_dist, \
             # make sure the fl is possible given the reads
             if fl > exon_lens_cum[-1]:
                 continue
-            if read_len != None \
+            if read_len is not None \
                 and not LET_READS_OVERLAP \
                 and fl < 2*read_len:
                 continue
@@ -146,17 +146,17 @@ def simulate_reads_from_exons( n, fl_dist, \
             end_location = start_location + fl - 1
             
             # if we want to full fragment
-            if read_len == None:
+            if read_len is None:
                 bin1 = get_bin( start_location )
                 bin2 = get_bin( end_location )
-                assert bin1 != None and bin2 != None
+                assert bin1 is not None and bin2 is not None
                 return tuple(xrange(bin1, bin2+1))
             # if we want just the pairs
             else:
                 pair_1 = get_bin_pairs( start_location, read_len )
-                if pair_1 == None: continue
+                if pair_1 is None: continue
                 pair_2 = get_bin_pairs( end_location - read_len + 1, read_len )
-                if pair_2 == None: continue
+                if pair_2 is None: continue
                 return ( pair_1, pair_2 )            
     
     for loop in xrange( n ):
@@ -236,14 +236,14 @@ def find_short_read_bins_from_fragment_bin(
             # find the length of the internal exons. If they are too long,
             # then any new exons will make them even longer, so we are done
             internal_exons_len = sum( exon_lens[i] for i in new_bin[1:-1] )
-            if internal_exons_len - 2*min_num_mappable_bases > read_len:
+            if internal_exons_len - 2*min_num_mappable_bases > read_len[1]:
                 return
             
             # calculate all of the exon lens. If they are too short, then
             # continue ( to add more exons ). We can't just add the beginning
             # and final exons to internal exons because of the single exon case
             # ( although we can get around this, but, premature optimization...)
-            if sum( exon_lens[i] for i in new_bin ) < read_len:
+            if sum( exon_lens[i] for i in new_bin ) < read_len[1]:
                 continue
 
             yield tuple(new_bin)
@@ -371,14 +371,14 @@ def estimate_num_paired_reads_from_bin(
     # read start at position ( relative to the transcript ) of 0 ( the read can 
     # start at the first position in exon 1 ) *or* last_exon_start + 1-read_len 
     min_start = max( 0, sum( fr_exon_lens[:-1] ) 
-                         + min_num_mappable_bases - read_len )
+                         + min_num_mappable_bases - read_len[1] )
     # make sure that there is enough room for the second read to start in 
     # sr_exon[0] given the fragment length constraints
-    min_start = max( min_start, pre_sr_exon_lens + read_len - fl_dist.fl_max )
+    min_start = max( min_start, pre_sr_exon_lens + read_len[1] - fl_dist.fl_max )
 
     max_start = fr_exon_lens[0] - min_num_mappable_bases
     # make sure that there are enough bases in the last exon for the read to fit
-    max_start = min( max_start, sum( fr_exon_lens ) - read_len )
+    max_start = min( max_start, sum( fr_exon_lens ) - read_len[1] )
     
     if DEBUG:
         print "Start Bnds", min_start, max_start
@@ -386,7 +386,7 @@ def estimate_num_paired_reads_from_bin(
     # find the range of stop indices.
     # first, the minimum stop is always at least the first base of the first 
     # exon in the second read bin
-    min_stop = pre_sr_exon_lens + read_len
+    min_stop = pre_sr_exon_lens + read_len[1]
     # second, we know that at least min_num_mappable_bases are in the last exon
     # of the second read, because we assume that this read is possible. 
     min_stop = max( min_stop, pre_sr_exon_lens \
@@ -401,14 +401,14 @@ def estimate_num_paired_reads_from_bin(
     # extends *past* the last exon, which we account for on the line after.x
     max_stop = min( max_stop, \
                     pre_sr_exon_lens + sr_exon_lens[0] \
-                    - min_num_mappable_bases + read_len )
+                    - min_num_mappable_bases + read_len[1] )
     # all basepairs of the last exon in the second read are in the fragment. 
     # Make sure the previous calculation doesnt extend past the last exon.
     max_stop = min( max_stop, 
                     min_stop - min_num_mappable_bases + sr_exon_lens[-1] )
     
     # ensure that the min_stop is at least 1 read length from the min start
-    min_stop = max( min_stop, min_start + read_len )
+    min_stop = max( min_stop, min_start + read_len[1] )
 
     if DEBUG:
         print "Stop Bnds", min_stop, max_stop
@@ -586,7 +586,7 @@ def build_expected_and_observed_rnaseq_counts(gene, reads, fl_dists):
 
 def build_expected_and_observed_transcript_bndry_counts( 
         gene, reads, bndry_type=None ):
-    if bndry_type == None:
+    if bndry_type is None:
         # try to infer the boundary type from the reads type
         if reads.type == 'CAGE': bndry_type = "five_prime"
         elif reads.type == 'PolyA': bndry_type = "three_prime"
@@ -899,9 +899,9 @@ class DesignMatrix(object):
             build_expected_and_observed_rnaseq_counts( 
                 gene, rnaseq_reads, fl_dists )
         clustered_bins = cluster_bins(expected_rnaseq_cnts)
-        for cluster in clustered_bins:
-            print cluster
-        print
+        #for cluster in clustered_bins:
+        #    print cluster
+        #print
         
         # if no transcripts are observable given the fl dist, then return nothing
         if len( expected_rnaseq_cnts ) == 0:
@@ -949,7 +949,7 @@ class DesignMatrix(object):
         # it doesn't matter which design matric we use, because they 
         # al have the same number of transcripts
         for array in self.expected_freq_arrays:
-            if array == None: continue
+            if array is None: continue
             num_transcripts = array.shape[1]
             break
         
@@ -964,11 +964,11 @@ class DesignMatrix(object):
         # find the transcripts that we want to build the array for
         indices = self.transcript_indices()
         # add in the out of gene counts
-        if bam_cnts != None:
+        if bam_cnts is not None:
             indices = [-1,] + indices.tolist()
             indices = numpy.array(indices)+1
         
-        if self._expected_and_observed != None and \
+        if self._expected_and_observed is not None and \
                 self._cached_bam_cnts == bam_cnts and \
                 sorted(self._cached_indices) == sorted(indices):
             return self._expected_and_observed
@@ -978,10 +978,10 @@ class DesignMatrix(object):
         obs_arrays_to_stack = []
         for i, (expected, observed) in enumerate(izip(
                 self.expected_freq_arrays, self.obs_cnt_arrays)):
-            if expected == None:
-                assert observed == None
+            if expected is None:
+                assert observed is None
                 continue
-            if bam_cnts != None: 
+            if bam_cnts is not None: 
                 #obs_arrays_to_stack.append( bam_cnts[i]-sum(observed) )
                 observed = numpy.hstack((bam_cnts[i]-sum(observed), observed))
                 expected = numpy.vstack(
@@ -1009,7 +1009,7 @@ class DesignMatrix(object):
 
     def find_transcripts_to_filter(self,expected,observed,max_num_transcripts):
         # cluster bins
-        expected, observed = cluster_rows(expected, observed)
+        expected, observed, clusters = cluster_rows(expected, observed)
         
         num_transcripts = expected.shape[1]
         low_expression_ts = set(self.unobservable_transcripts)
@@ -1033,7 +1033,7 @@ class DesignMatrix(object):
     def __init__(self, gene, fl_dists,
                  rnaseq_reads, five_p_reads, three_p_reads,
                  max_num_transcripts=None):
-        assert fl_dists != None
+        assert fl_dists is not None
         self.array_types = []
 
         self.obs_cnt_arrays = []
@@ -1054,7 +1054,7 @@ class DesignMatrix(object):
         if len( gene.transcripts ) == 0:
             raise ValueError, "No transcripts"
         
-        if five_p_reads != None:
+        if five_p_reads is not None:
             if config.DEBUG_VERBOSE:
                 config.log_statement( "Building TSS arrays for %s" % gene.id )
             self._build_gene_bnd_arrays(gene, five_p_reads, 'five_p_reads')
@@ -1067,10 +1067,10 @@ class DesignMatrix(object):
         if config.DEBUG_VERBOSE:
             config.log_statement( "Building RNAseq arrays for %s" % gene.id )
         self._build_rnaseq_arrays(gene, rnaseq_reads, fl_dists)
-        if self.obs_cnt_arrays[-1] != None:
+        if self.obs_cnt_arrays[-1] is not None:
             self.num_rnaseq_reads = sum(self.obs_cnt_arrays[-1])
         
-        if three_p_reads != None:
+        if three_p_reads is not None:
             if config.DEBUG_VERBOSE:
                 config.log_statement( "Building TES arrays for %s" % gene.id )
             self._build_gene_bnd_arrays(gene, three_p_reads, 'three_p_reads')
@@ -1080,14 +1080,14 @@ class DesignMatrix(object):
             self.obs_cnt_arrays.append(None)
             self.num_tp_reads = None
 
-        if all( mat == None for mat in self.obs_cnt_arrays ):
+        if all( mat is None for mat in self.obs_cnt_arrays ):
             raise NoObservableTranscriptsError, "No observable transcripts"
         
         # initialize the filtered_transcripts to the unobservable transcripts
         self.filtered_transcripts = set(list(self.unobservable_transcripts))
         
         # update the set to satisfy the max_num_transcripts restriction
-        if max_num_transcripts != None:
+        if max_num_transcripts is not None:
             if config.DEBUG_VERBOSE:
                 config.log_statement("Filtering design matrix for %s" % gene.id)
 

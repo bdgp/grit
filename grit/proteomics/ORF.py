@@ -34,6 +34,7 @@ from copy import copy
 
 # import biological mods
 from pysam import Fastafile
+import grit.config
 
 # declare constants
 MIN_AAS_PER_ORF = 100
@@ -262,19 +263,19 @@ def find_gene_orfs_worker( input_queue, gtf_ofp, fa_ofp, fasta_fn ):
         except Queue.Empty:
             break
         
-        if VERBOSE: print >> sys.stderr, '\tProcessing ' + gene.id
+        if VERBOSE: config.log_statement('\tProcessing ' + gene.id)
         ann_trans = find_cds_for_gene( gene, fasta, ONLY_USE_LONGEST_ORF )
         op_str = "\n".join( [ tr.build_gtf_lines( gene.id, {} ) 
                               for tr in ann_trans ] )
         gtf_ofp.write( op_str + "\n" )
         
-        if fa_ofp != None:
+        if fa_ofp is not None:
             for trans in ann_trans:
                 fa_ofp.write( ">%s\n" % trans.id )
                 for line in iter_x_char_lines(trans.coding_sequence):
                     fa_ofp.write(line+"\n")
                 
-        if VERBOSE: print >> sys.stderr, '\tFinished ' + gene.id
+        if VERBOSE: config.log_statement('\tFinished ' + gene.id)
     
     return
 
@@ -284,7 +285,7 @@ def find_all_orfs( genes, fasta_fn, gtf_ofp, fa_ofp, num_threads=1 ):
     manager = multiprocessing.Manager()
     input_queue = manager.Queue()
     
-    if MIN_VERBOSE: print >> sys.stderr, 'Processing all transcripts for ORFs.'
+    if MIN_VERBOSE: config.log_statement('Processing all transcripts for ORFs.')
     
     # populate input_queue
     for gene in genes:

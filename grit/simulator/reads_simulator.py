@@ -42,6 +42,7 @@ sys.path.insert(0, "/home/nboley/grit/grit/")
 import grit.frag_len as frag_len
 from grit.files.gtf import load_gtf
 from grit.files.reads import clean_chr_name
+import grit.config as config
 
 def fix_chr_name(x):
     return "chr" + clean_chr_name(x)
@@ -117,7 +118,7 @@ def build_sam_line( transcript, read_len, offset, read_identifier, quality_strin
     insert_size = transcript.genome_pos(offset+read_len) - transcript.genome_pos(offset)
     # get slice of seq from transcript
     seq = ( transcript.seq[ offset : (offset + read_len) ] 
-            if transcript.seq != None else '*' )
+            if transcript.seq is not None else '*' )
     # initialize sam lines with read identifiers and then add appropriate fields
     sam_line = '\t'.join( ( 
             read_identifier, str( flag ), fix_chr_name(transcript.chrm), 
@@ -149,7 +150,7 @@ def build_sam_lines( transcript, read_len, frag_len, offset,
 
     # get slice of seq from transcript
     seq = ['*', '*']
-    if transcript.seq != None:
+    if transcript.seq is not None:
         seq[ up_strm_read ] = transcript.seq[offset:(offset + read_len)]
         seq[ dn_strm_read ] = transcript.seq[
             (offset + frag_len - read_len):(offset + frag_len)]
@@ -273,7 +274,7 @@ def simulate_reads( genes, fl_dist, fasta, quals, num_frags, single_end,
             read_len = fl
             
         # get a random quality scores
-        if transcript.seq == None:
+        if transcript.seq is None:
             read_qual = '*'
         else:
             read_qual = get_random_qual_score( read_len )
@@ -293,7 +294,7 @@ def simulate_reads( genes, fl_dist, fasta, quals, num_frags, single_end,
             read_len = int( math.ceil( fl / float(2) ) )
 
         # get two random quality scores
-        if transcript.seq == None:
+        if transcript.seq is None:
             read_quals = ['*', '*']
         else:
             read_quals = [ get_random_qual_score( read_len ), 
@@ -334,13 +335,13 @@ def simulate_reads( genes, fl_dist, fasta, quals, num_frags, single_end,
         contig_lens[fix_chr_name(gene.chrm)] = max(
             gene.stop+1000, contig_lens[fix_chr_name(gene.chrm)])
         for transcript in gene.transcripts:
-            if fasta != None:
+            if fasta is not None:
                 transcript.seq = get_transcript_sequence(transcript, fasta)
             else:
                 transcript.seq = None
-            if transcript.fpkm != None:
+            if transcript.fpkm is not None:
                 weight = transcript.fpkm*calc_scale_factor(transcript)
-            elif transcript.frac != None:
+            elif transcript.frac is not None:
                 assert len(genes) == 1
                 weight = transcript.frac
             else: 
@@ -358,7 +359,7 @@ def simulate_reads( genes, fl_dist, fasta, quals, num_frags, single_end,
     transcript_weights_cumsum = transcript_weights.cumsum()
 
     # update the contig lens from the fasta file, if available 
-    if fasta != None:
+    if fasta is not None:
         for name, length in zip(fasta.references, fasta.lengths):
             if fix_chr_name(name) in contig_lens:
                 contig_lens[fix_chr_name(name)] = max(
@@ -514,9 +515,9 @@ def parse_arguments():
             args.fl_dist_norm = [ int( mean ), int( sd ) ]
         except ValueError:
             args.fl_dist_norm = None
-            print >> sys.stderr, \
+            config.log_statement(
               "WARNING: User input mean and sd are not formatted correctly.\n"+\
-              "\tUsing default values.\n"
+              "\tUsing default values.\n")
 
     return ( args.gtf, args.fl_dist_const, args.fl_dist_norm, 
              args.fasta, args.quality, args.num_frags, 

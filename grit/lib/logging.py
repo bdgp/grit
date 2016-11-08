@@ -21,6 +21,7 @@ import os, sys
 import time
 import curses
 import multiprocessing
+import traceback
 
 import grit
 
@@ -82,7 +83,7 @@ def manage_curses_display(stdscr, msg_queue, msg_queue_lock, nthreads=1):
             
             # truncate the message so that it doesnt extend past 80 charcters
             msg = msg[:MAX_NCOL-11]
-            if thread_index != None:
+            if thread_index is not None:
                 line = ("Thread %i:" % (thread_index)).ljust(11) \
                     + msg.ljust(MAX_NCOL-11)
                 thread_data_windows[thread_index].erase()
@@ -127,13 +128,20 @@ class Logger( object ):
         
         return
     
-    def __call__( self, message, display=True, log=False ):
-        message = str(message)
+    def __call__( self, *message, **kwargs):
+        display = kwargs.get('display', True)
+        log = kwargs.get('log', True)
+        #trace = kwargs.get('trace', True)
+        trace = kwargs.get('trace', False)
+        if display: log = True
+        message = '\n'.join([str(m) for m in message])
         if not self.use_ncurses:
             if log or (config.DEBUG_VERBOSE and message.strip() != ''): 
                 self.log_ofstream.write(message.strip() + "\n" )
+                if trace: self.log_ofstream.write(''.join(traceback.format_stack()))
                 self.log_ofstream.flush()
                 sys.stderr.write(message.strip() + "\n" )
+                if trace: sys.stderr.write(''.join(traceback.format_stack()))
             return
 
         # if the message is empty, always display and never log
@@ -142,8 +150,9 @@ class Logger( object ):
             log = False
         # if we want to log this, and we have an output stream, write this
         # to the log
-        if (log or config.DEBUG_VERBOSE) and self.log_ofstream != None:
+        if (log or config.DEBUG_VERBOSE) and self.log_ofstream is not None:
             self.log_ofstream.write(message.strip() + "\n" )
+            if trace: self.log_ofstream.write(''.join(traceback.format_stack()))
             self.log_ofstream.flush()
         
         # if we're not using ncurses, then write the message to standard err
@@ -159,7 +168,7 @@ class Logger( object ):
                 except ValueError:
                     try: 
                         p_index = min( i for i, pid in enumerate(self.pid_to_index_mapping) 
-                                       if pid == None or not os.path.exists("/proc/%i"%pid))
+                                       if pid is None or not os.path.exists("/proc/%i"%pid))
                         self.pid_to_index_mapping[p_index] = os.getpid()
                     except:
                         #raise

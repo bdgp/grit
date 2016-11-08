@@ -100,7 +100,7 @@ class Bin(object):
         return self._bndry_color_mapping[ bndry ]
     
     def _find_colors( self, strand ):
-        if self.type != None:
+        if self.type is not None:
             if self.type =='GENE':
                 return '0,0,0'
             if self.type =='CAGE_PEAK':
@@ -182,10 +182,10 @@ class SegmentBin(Bin):
         type_str =  ( 
             "(%s-%s)" % ( ",".join(self.left_labels), 
                         ",".join(self.right_labels) ) 
-            if self.type == None else self.type )
+            if self.type is None else self.type )
         loc_str = "%i-%i" % ( self.start, self.stop )
         rv = "%s:%s" % (type_str, loc_str)
-        if self.fpkm != None:
+        if self.fpkm is not None:
             rv += ":%.2f-%.2f TPM" % (self.fpkm_lb, self.fpkm_ub)
         return rv
 
@@ -222,7 +222,7 @@ class  TranscriptElement( Bin ):
         type_str = self.type
         loc_str = "%i-%i" % ( self.start, self.stop )
         rv = "%s:%s" % (type_str, loc_str)
-        if self.fpkm != None:
+        if self.fpkm is not None:
             rv += ":%.2f FPKM" % self.fpkm
         return rv
 
@@ -334,7 +334,7 @@ class GeneElements(object):
             blocks = []
             use_thick_lines=(element.type != 'INTRON')
             element_type = element.type
-            if element_type == None: 
+            if element_type is None: 
                 element_type = 'UNKNOWN'
                 continue
             
@@ -367,7 +367,7 @@ class GeneElements(object):
             writetable_bins = self
         
         for bin in writetable_bins:
-            if filter != None and bin.type != filter:
+            if filter is not None and bin.type != filter:
                 continue
             chrm = elements.chrm
             if config.FIX_CHRM_NAMES_FOR_UCSC:
@@ -555,7 +555,7 @@ def find_transcribed_regions_and_jns_in_segment(
     fragment_lengths =  defaultdict(lambda: defaultdict(int))
     
     for reads_i,reads in enumerate((promoter_reads, rnaseq_reads, polya_reads)):
-        if reads == None: continue
+        if reads is None: continue
 
         ( p1_rds, p2_rds, r_plus_jns, r_minus_jns, inner_cov, reads_n_uniq
           ) = extract_jns_and_reads_in_region(
@@ -595,7 +595,7 @@ def find_transcribed_regions_and_jns_in_segment(
     # algorithm knows which gene segments to join if a jn falls outside of 
     # a region with observed transcription
     # we also add pseudo coverage for other elements to provide connectivity
-    if ref_elements != None and len(ref_elements_to_include) > 0:
+    if ref_elements is not None and len(ref_elements_to_include) > 0:
         ref_jns = []
         for strand in "+-":
             for element_type, (start, stop) in ref_elements.iter_elements(
@@ -633,7 +633,7 @@ def split_genome_into_segments(contig_lens, region_to_use,
 
     The segments are closed-closed, and strand specific.
     """
-    if region_to_use != None:
+    if region_to_use is not None:
         r_chrm, (r_start, r_stop) = region_to_use
     else:
         r_chrm, r_start, r_stop = None, 0, 1000000000000
@@ -645,7 +645,7 @@ def split_genome_into_segments(contig_lens, region_to_use,
     # whcih usually take longer to finish are started first
     for contig, contig_length in sorted(
             contig_lens.iteritems(), key=lambda x:x[1]):
-        if region_to_use != None and r_chrm != contig: 
+        if region_to_use is not None and r_chrm != contig: 
             continue
         for start in xrange(r_start, min(r_stop,contig_length), segment_length):
             segments.append(
@@ -689,9 +689,9 @@ def find_segments_and_jns_worker(
         rnaseq_reads, promoter_reads, polya_reads,
         ref_elements, ref_elements_to_include ):
     rnaseq_reads = rnaseq_reads.reload()
-    if promoter_reads != None: 
+    if promoter_reads is not None: 
         promoter_reads = promoter_reads.reload()
-    if polya_reads != None: 
+    if polya_reads is not None: 
         polya_reads = polya_reads.reload()
 
     local_frag_lens = defaultdict(int)
@@ -703,14 +703,13 @@ def find_segments_and_jns_worker(
     length_of_segments = segments.qsize()
     while True:
         try: 
-            config.log_statement("Waiting for segment")
+            #config.log_statement("Waiting for segment")
             segment = segments.get(timeout=1.0)
         except Queue.Empty: 
             continue
         if segment == 'FINISHED': 
-            config.log_statement("")
             break
-        config.log_statement("Finding genes and jns in %s" % str(segment) )
+        #config.log_statement("Finding genes and jns in %s" % str(segment) )
         try:
             ( r_transcribed_regions, r_jns, r_n_unique_reads, r_frag_lens,
                 ) = find_transcribed_regions_and_jns_in_segment(
@@ -723,7 +722,6 @@ def find_segments_and_jns_worker(
             seg2[1] = seg1[2]
             segments.put(seg1)
             segments.put(seg2)
-            config.log_statement("")
             continue
 
         for (rd_key, rls), fls in r_frag_lens.iteritems():
@@ -815,7 +813,7 @@ def find_all_gene_segments( rnaseq_reads, promoter_reads, polya_reads,
 
     contig_lens = dict(zip(*get_contigs_and_lens( 
         [ reads for reads in [rnaseq_reads, promoter_reads, polya_reads]
-          if reads != None ] )))
+          if reads is not None ] )))
 
     config.log_statement("Spawning gene segment finding children")    
     segments_queue = multiprocessing.Queue()
@@ -858,15 +856,15 @@ def find_all_gene_segments( rnaseq_reads, promoter_reads, polya_reads,
     for i in xrange(config.NTHREADS): segments_queue.put('FINISHED')
     
     while segments_queue.qsize() > 2*config.NTHREADS:
-        config.log_statement(
-            "Waiting on gene segment finding children (%i/%i segments remain)" 
-            %(segments_queue.qsize(), len(segments)))        
+        #config.log_statement(
+            #"Waiting on gene segment finding children (%i/%i segments remain)" 
+            #%(segments_queue.qsize(), len(segments)))        
         time.sleep(0.5)
     
     for i, pid in enumerate(pids):
-        config.log_statement(
-            "Waiting on gene segment finding children (%i/%i children remain)" 
-            %(len(pids)-i, len(pids)))
+        #config.log_statement(
+            #"Waiting on gene segment finding children (%i/%i children remain)" 
+            #%(len(pids)-i, len(pids)))
         os.waitpid(pid, 0) 
             
     config.log_statement("Merging gene segments")
@@ -931,6 +929,4 @@ def find_all_gene_segments( rnaseq_reads, promoter_reads, polya_reads,
 
     global_gene_data.shutdown()
 
-    config.log_statement("")    
-        
     return new_genes, fl_dists, num_unique_reads 

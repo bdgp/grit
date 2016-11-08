@@ -27,7 +27,7 @@ from ..files.reads import MergedReads, RNAseqReads, CAGEReads, RAMPAGEReads, Pol
 def load_polya_reads( polya_bams, polya_strands_need_to_be_reversed, 
                       ref_genes=None ):
     if VERBOSE: log_statement( 'Loading polyA reads bams' )        
-    if polya_bams == None: return None
+    if polya_bams is None: return None
 
     all_reads = []
     for i, polya_bam_fp in enumerate(polya_bams):
@@ -44,13 +44,13 @@ def load_polya_reads( polya_bams, polya_strands_need_to_be_reversed,
 def load_promoter_reads(cage_bams, cage_strands_need_to_be_reversed,
                         rampage_bams, rampage_strands_need_to_be_reversed,
                         ref_genes = None):
-    assert cage_bams == None or rampage_bams == None, \
+    assert cage_bams is None or rampage_bams is None, \
         "Can not use both RAMPAGE and CAGE reads"
-    if cage_bams != None: 
+    if cage_bams is not None: 
         bams = cage_bams
         reads_class = CAGEReads
         strands_need_to_be_reversed = cage_strands_need_to_be_reversed
-    elif rampage_bams != None: 
+    elif rampage_bams is not None: 
         bams =rampage_bams
         reads_class = RAMPAGEReads
         strands_need_to_be_reversed = rampage_strands_need_to_be_reversed
@@ -59,7 +59,7 @@ def load_promoter_reads(cage_bams, cage_strands_need_to_be_reversed,
     all_reads = []
     for i, bam_fp in enumerate(bams):
         reads = reads_class(bam_fp.name)
-        rev_reads = None if strands_need_to_be_reversed == None else \
+        rev_reads = None if strands_need_to_be_reversed is None else \
             strands_need_to_be_reversed[i]
         reads.init(reverse_read_strand=rev_reads, ref_genes=ref_genes)
         all_reads.append(reads)
@@ -90,61 +90,61 @@ def initialize_reads_from_args(args):
     
     returns: promoter_reads, rnaseq_reads, polya_reads, genes
     """
-    if ((    args.cage_read_type == None 
+    if ((    args.cage_read_type is None 
             or any(x=='auto' for x in args.cage_read_type) )
         and None == args.reference 
         and None != args.cage_reads):
         raise ValueError, "--reference must be set if --cage-read-type is not set or set to 'auto' (GRIT needs an annotation to determine the read type)"
     
-    if (( args.rampage_read_type == None 
+    if (( args.rampage_read_type is None 
             or any(x=='auto' for x in args.rampage_read_type) )
         and None == args.reference 
         and None != args.rampage_reads):
         raise ValueError, "--reference must be set if --rampage-read-type is not set or set to 'auto' (GRIT needs an annotation to determine the read type)"
 
-    if (( args.rnaseq_read_type == None 
+    if (( args.rnaseq_read_type is None 
             or any(x=='auto' for x in args.rnaseq_read_type) )
         and None == args.reference 
         and None != args.rnaseq_reads ):
         raise ValueError, "--reference must be set if --rnaseq-read-type is not set or set to 'auto' (GRIT needs an annotation to determine the read type)"
 
-    if (( args.polya_read_type == None 
+    if (( args.polya_read_type is None 
             or any(x=='auto' for x in args.polya_read_type) )
         and None == args.reference 
         and None != args.rnaseq_reads):
         raise ValueError, "--reference must be set if --polya-read-type is not set or set to 'auto' (GRIT needs an annotation to determine the read type)"
 
-    if args.cage_read_type == None:
+    if args.cage_read_type is None:
         cage_strands_need_to_be_reversed = ['auto']*(
-            0 if args.cage_reads == None else len(args.cage_reads))
+            0 if args.cage_reads is None else len(args.cage_reads))
     else:
         cage_strands_need_to_be_reversed = [ 
             bool(read_type.lower() == 'backward')
             for read_type in args.cage_read_type ]
     
-    if args.rampage_read_type == None:
+    if args.rampage_read_type is None:
         rampage_strands_need_to_be_reversed = ['auto']*(
-            0 if args.rampage_reads == None else len(args.rampage_reads))
+            0 if args.rampage_reads is None else len(args.rampage_reads))
     else:
         rampage_strands_need_to_be_reversed = [ 
             bool(read_type.lower() == 'backward')
             for read_type in args.rampage_read_type ]
 
-    if args.rnaseq_read_type == None:
+    if args.rnaseq_read_type is None:
         rnaseq_strands_need_to_be_reversed = ['auto']*len(args.rnaseq_reads)
     else:
         rnaseq_strands_need_to_be_reversed = [ 
             bool(read_type.lower() == 'backward')
             for read_type in args.rnaseq_read_type ]
 
-    if args.polya_read_type == None:
+    if args.polya_read_type is None:
         polya_strands_need_to_be_reversed = ['auto']*len(args.rnaseq_reads)
     else:
         polya_strands_need_to_be_reversed = [ 
             bool(read_type.lower() == 'backward')
             for read_type in args.polya_read_type ]
 
-    if args.reference != None:
+    if args.reference is not None:
         if VERBOSE: log_statement("Loading annotation file.")
         ref_genes = load_gtf( args.reference )
     else:
