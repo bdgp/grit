@@ -143,7 +143,9 @@ class Samples(object):
         for line in control_fp:
             if line.strip().startswith("#"): continue
             if line.strip() == '': continue
-            lines.append( ControlFileEntry(*(line.split())) )
+            entry = ControlFileEntry(*(line.split()))
+            entry = entry._replace(filename=os.path.abspath(entry.filename))
+            lines.append(entry)
         return lines
     
     def parse_single_sample_args(self, args):
@@ -153,19 +155,19 @@ class Samples(object):
         lines = []
         lines.append( ControlFileEntry( 
                 None, None, "rnaseq", 'true', 'true', 
-                args.rnaseq_read_type, args.rnaseq_reads.name ) )
+                args.rnaseq_read_type, os.path.abspath(args.rnaseq_reads.name) ) )
         if args.cage_reads != None:
             lines.append( ControlFileEntry( 
                     None, None, "cage", 'false', 'true', 
-                    args.cage_read_type, args.cage_reads.name ) )
+                    args.cage_read_type, os.path.abspath(args.cage_reads.name) ) )
         if args.rampage_reads != None:
             lines.append( ControlFileEntry( 
                     None, None, "rampage", 'true', 'true', 
-                    args.rampage_read_type, args.rampage_reads.name ) )
+                    args.rampage_read_type, os.path.abspath(args.rampage_reads.name) ) )
         if args.polya_reads != None:
             lines.append( ControlFileEntry( 
                     None, None, "polya", 'false', 'true',
-                    args.polya_read_type, args.polya_reads.name ) )
+                    args.polya_read_type, os.path.abspath(args.polya_reads.name) ) )
         return lines
     
     def verify_args_are_sufficient(self, rnaseq_reads, promoter_reads, polya_reads):
@@ -290,6 +292,8 @@ class Samples(object):
                 assert data.stranded == 'true', "RNASeq reads must be stranded"
                 rev_reads = {'forward':False, 'backward':True, 'auto': None}[
                     data.read_type]
+                config.log_statement("data.filename=%s" % data.filename)
+                config.log_statement("os.getcwd()=%s" % os.getcwd())
                 reads = RNAseqReads(data.filename)
                 reads.init(reverse_read_strand=rev_reads, 
                            ref_genes=self.ref_genes)
@@ -650,9 +654,8 @@ def parse_arguments():
     except OSError:
         if not args.continue_run:
             raise OSError, "Directory '%s' already exists: either remove it, change the --output-dir option, or use the --continue-run option" % args.output_dir
-    os.chdir(args.output_dir)
     
-    log_ofstream = open( "log.txt", "a" )
+    log_ofstream = open( args.output_dir+"/log.txt", "a" )
     log_statement = Logger(
         nthreads=config.NTHREADS,
         use_ncurses=(not args.batch_mode), 
@@ -743,6 +746,8 @@ def main():
 
     # load the samples into database, and the reference genes if necessary
     sample_data = Samples(args)
+    
+    os.chdir(args.output_dir)
 
     # if the reference genes weren't loaded while parsing the data, and we
     # need the reference elements, then load the reference genes now
