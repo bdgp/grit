@@ -292,8 +292,6 @@ class Samples(object):
                 assert data.stranded == 'true', "RNASeq reads must be stranded"
                 rev_reads = {'forward':False, 'backward':True, 'auto': None}[
                     data.read_type]
-                config.log_statement("data.filename=%s" % data.filename)
-                config.log_statement("os.getcwd()=%s" % os.getcwd())
                 reads = RNAseqReads(data.filename)
                 reads.init(reverse_read_strand=rev_reads, 
                            ref_genes=self.ref_genes)
