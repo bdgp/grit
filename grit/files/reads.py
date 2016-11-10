@@ -137,7 +137,7 @@ def get_rd_posterior_prb(read):
 
 def determine_read_strand_params( 
         reads, ref_genes, pairs_are_opp_strand, element_to_search,
-        MIN_NUM_READS_PER_GENE, MIN_GENES_TO_CHECK):
+        MIN_NUM_READS_PER_GENE, MIN_GENES_TO_CHECK, MIN_GENES_TO_CHECK_OR_FAIL):
     reads._build_chrm_mapping()
     cnts = {'diff': 0, 'same': 0, 'unstranded': 0}
     for gene in ref_genes:
@@ -152,7 +152,6 @@ def determine_read_strand_params(
         # make sure that we have at least MIN_NUM_READS_PER_GENE 
         # reads in this gene
         if sum(reads_match.values()) < MIN_NUM_READS_PER_GENE: continue
-        
         
         if reads_match[True] > 5*reads_match[False]:
             cnts['same'] += 1
@@ -172,6 +171,15 @@ def determine_read_strand_params(
             if cnts['unstranded'] == max_val:
                 return ('unstranded', )
     
+    if sum(cnts.values()) >= MIN_GENES_TO_CHECK_OR_FAIL:
+        max_val = max(cnts.values())
+        if cnts['same'] == max_val:
+            return ('stranded', 'dont_reverse_read_strand')
+        if cnts['diff'] == max_val:
+            return ('stranded', 'reverse_read_strand')
+        if cnts['unstranded'] == max_val:
+            return ('unstranded', )
+            
     assert False, "Could not auto determine 'reverse_read_strand' parameter for '%s' - the read type needs to be set" % reads.filename
 
 
@@ -771,7 +779,7 @@ class RNAseqReads(Reads):
              or reverse_read_strand in ('auto', None) ):
             read_strand_attributes = determine_read_strand_params(
                 self, ref_genes, pairs_are_opp_strand, 'internal_exon',
-                300, 50 )
+                300, 50, 10 )
             if 'unstranded' in read_strand_attributes:
                 if reads_are_stranded in ('auto', None):
                     reads_are_stranded = False
@@ -829,7 +837,7 @@ class CAGEReads(Reads):
                 raise ValueError, "Determining reverse_read_strand requires reference genes"
             reverse_read_strand_params = determine_read_strand_params(
                 self, ref_genes, pairs_are_opp_strand, 'tss_exon',
-                300, 50 )
+                300, 50, 10 )
             assert 'stranded' in reverse_read_strand_params
             if 'reverse_read_strand' in reverse_read_strand_params:
                 reverse_read_strand = True
@@ -892,7 +900,7 @@ class RAMPAGEReads(Reads):
                 raise ValueError, "Determining reverse_read_strand requires reference genes"
             reverse_read_strand_params = determine_read_strand_params(
                 self, ref_genes, pairs_are_opp_strand, 'tss_exon',
-                300, 50 )
+                300, 50, 10 )
             assert 'stranded' in reverse_read_strand_params
             if 'reverse_read_strand' in reverse_read_strand_params:
                 reverse_read_strand = True
@@ -959,7 +967,7 @@ class PolyAReads(Reads):
                 raise ValueError, "Determining reverse_read_strand requires reference genes"
             reverse_read_strand_params = determine_read_strand_params(
                 self, ref_genes, pairs_are_opp_strand, 'tes_exon',
-                300, 50 )
+                300, 50, 10 )
             assert 'stranded' in reverse_read_strand_params
             if 'reverse_read_strand' in reverse_read_strand_params:
                 reverse_read_strand = True
