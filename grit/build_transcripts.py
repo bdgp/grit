@@ -444,7 +444,6 @@ def add_elements_for_contig_and_strand_worker(
     while True:
         args = args_queue.get()
         if args == 'FINISHED': 
-            config.log_statement("")
             return
         (contig, strand), grpd_exons = args
         add_elements_for_contig_and_strand(

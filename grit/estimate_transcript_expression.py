@@ -119,6 +119,10 @@ class SharedData(object):
         return
     
     def get_num_reads_in_bams(self):
+        #config.log_statement("num_cage_reads=%s, num_rnaseq_reads=%s, num_polya_reads=%s" 
+            #% (self.num_cage_reads.value, 
+                #self.num_rnaseq_reads.value, 
+                #self.num_polya_reads.value), trace=True)
         return (self.num_cage_reads.value, 
                 self.num_rnaseq_reads.value, 
                 self.num_polya_reads.value)
@@ -235,7 +239,6 @@ def calc_fpkm( gene, fl_dists, freqs, num_reads_in_bam):
 
     # grab the number of RNAseq reads 
     num_reads_in_bam = num_reads_in_bam[1]
-    
     fpkms = []
     for t, freq in izip( gene.transcripts, freqs ):
         if freq < 0:
@@ -555,13 +558,23 @@ def build_design_matrices_worker( gene_ids,
                     gene.id, gene.chrm, gene.strand, 
                     gene.start, gene.stop, len(gene.transcripts) ) )
             
+            config.log_statement("rnaseq_reads=%s, promoter_reads=%s, polya_reads=%s, MAX_NUM_TRANSCRIPTS_TO_QUANTIFY=%s" %
+                (rnaseq_reads.num_reads if rnaseq_reads else rnaseq_reads, 
+                 promoter_reads.num_reads if promoter_reads else promoter_reads, 
+                 polya_reads.num_reads if polya_reads else polya_reads, 
+                 config.MAX_NUM_TRANSCRIPTS_TO_QUANTIFY), trace=True)
             f_mat = f_matrix.DesignMatrix(
                 gene, fl_dists, 
                 rnaseq_reads, promoter_reads, polya_reads,
                 config.MAX_NUM_TRANSCRIPTS_TO_QUANTIFY)
+            config.log_statement("f_mat=%s" % f_mat)
+            config.log_statement("f_mat.num_rnaseq_reads=%s" % f_mat.num_rnaseq_reads)
+            config.log_statement("f_mat.num_fp_reads=%s" % f_mat.num_fp_reads)
+            config.log_statement("f_mat.num_tp_reads=%s" % f_mat.num_tp_reads)
             
             config.log_statement( "WRITING DESIGN MATRIX TO DISK %s" % gene.id )
             data.set_design_matrix(gene.id, f_mat)
+            
             config.log_statement( "FINISHED DESIGN MATRICES %s" % gene.id )
 
         except f_matrix.NoObservableTranscriptsError:
@@ -665,6 +678,7 @@ def build_gene_lines_for_tracking_file(
 
 def write_data_to_tracking_file(data, fl_dists, ofp):
     num_reads_in_bams = data.get_num_reads_in_bams()
+    config.log_statement("num_reads_in_bams="+str(num_reads_in_bams), trace=True)
     ofp.write("\t".join(
             ["tracking_id", "gene_id ",
              "coverage", "FPKM    ",

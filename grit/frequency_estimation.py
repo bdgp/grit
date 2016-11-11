@@ -184,7 +184,7 @@ def project_onto_simplex( x, debug=False ):
     try: 
         rho = (rhos > 0).nonzero()[0].max() + 1
     except: 
-        raise
+        #raise
         x[x<MIN_TRANSCRIPT_FREQ] = MIN_TRANSCRIPT_FREQ
         x = x/x.sum()
         return x
@@ -644,20 +644,25 @@ def estimate_confidence_bound( f_mat,
             gradient, max_feasible_step_size)
         new_x = project_onto_simplex(x+alpha*gradient)
         
-        assert calc_lhd(new_x, observed_array, expected_array) >= min_lhd - 1e-12,\
+        lhd = calc_lhd(new_x, observed_array, expected_array)
+        if math.isnan(lhd): lhd = min_lhd
+        assert lhd >= min_lhd - 1e-12,\
             "Value is %e %s %e %e %e %e" % (
             alpha,
             new_x,
-            calc_lhd(new_x, observed_array, expected_array), 
+            lhd, 
             calc_lhd(project_onto_simplex(x), observed_array, expected_array), 
             min_lhd - 1e-12, 
-            calc_lhd(new_x, observed_array, expected_array) - min_lhd - 1e-12 )
+            lhd - min_lhd - 1e-12 )
         return new_x
     
     n = expected_array.shape[1]    
     max_lhd = calc_lhd(
         project_onto_simplex(mle_estimate), observed_array, expected_array)
     unprojected_lhd = calc_lhd(mle_estimate, observed_array, expected_array)
+    # ignore cases where unprojected_lhd is NaN
+    if math.isnan(unprojected_lhd): unprojected_lhd = max_lhd
+    
     assert abs(max_lhd - unprojected_lhd) < 1e-2, "Diff: %e %e %e" % (
         max_lhd, unprojected_lhd, max_lhd - unprojected_lhd)
     max_test_stat = chi2.ppf( 1 - alpha, 1 )/2.    

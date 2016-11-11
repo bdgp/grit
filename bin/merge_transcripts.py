@@ -107,7 +107,7 @@ def write_reduced_gene_to_file(new_gene, merged_transcript_sources,
             tracking_lines.append(line)
     
     ofp.write("\n".join(gtf_lines)+"\n")
-    if tracking_ofp != None:
+    if tracking_ofp is not None:
         tracking_ofp.write("\n".join(tracking_lines)+"\n")
     return
 
@@ -181,7 +181,7 @@ def main():
     merge_genes(all_genes_and_fnames, ofp, sources_ofp)
     
     ofp.close()
-    if sources_ofp != None:
+    if sources_ofp is not None:
         sources_ofp.close()
 
 main()

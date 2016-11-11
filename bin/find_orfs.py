@@ -67,17 +67,17 @@ def parse_arguments():
         help='Whether or not to print status information.')
     args = parser.parse_args()
     
-    if args.min_aas != None: 
+    if args.min_aas is not None: 
         grit.proteomics.ORF.MIN_AAS_PER_ORF = args.min_aas
     
     # create default if no prefix provided or if same as gtf filename
-    if args.output_filename == None:
+    if args.output_filename is None:
         gtf_ofp = ProcessSafeOPStream( sys.stdout )
     else:
         gtf_ofp = ProcessSafeOPStream( open( args.output_filename, 'w' ) )
         
     fa_ofp =  ProcessSafeOPStream( open(args.fasta_output_filename, 'w') ) if \
-        args.fasta_output_filename != None else None
+        args.fasta_output_filename is not None else None
     
     # set flag args
     grit.proteomics.ORF.VERBOSE = args.verbose

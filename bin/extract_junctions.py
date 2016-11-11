@@ -77,7 +77,7 @@ def parse_arguments():
 
 def main():
     reads, region, ofp = parse_arguments()
-    if region != None:
+    if region is not None:
         chrm, strand, pos = region.split(":")
         start, stop = [int(x) for x in pos.split("-")]
         region = [(chrm, strand, start, stop),]

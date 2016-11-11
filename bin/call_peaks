@@ -172,7 +172,7 @@ def process_genes(
         region = {'chrm': gene.chrm, 'strand':gene.strand, 
                   'start':gene.start, 'stop':gene.stop}
         shift_and_write(region, called_peaks, signal_cov, ofp)
-        if BED_ofp != None:
+        if BED_ofp is not None:
             shift_and_write_bed(region, called_peaks, BED_ofp, signal_cov, True)
     return
 
@@ -267,7 +267,7 @@ def parse_arguments():
 
     config.VERBOSE = args.verbose
     
-    #assert args.outfname != None, "--outfname must be set if --verbose is set"
+    #assert args.outfname is not None, "--outfname must be set if --verbose is set"
     from grit.lib.logging import Logger
     log_ofstream = open( "log.txt", "a" )
     log_statement = Logger(
@@ -291,7 +291,7 @@ def parse_arguments():
         'max_exp_mean_cvg_fraction': args.exp_filter_fraction/10
     }
     
-    if args.reference != None:
+    if args.reference is not None:
         if config.VERBOSE:
             log_statement("Loading reference genes")
         ref_genes = load_gtf(args.reference) 
@@ -304,13 +304,13 @@ def parse_arguments():
     else:
         assert args.use_reference_genes == False, \
             "You must set --reference to --use-reference-genes"
-        assert args.annotation_quantifications_ofname == None, \
+        assert args.annotation_quantifications_ofname is None, \
             "You must set --reference to --annotation-quantifications-ofname"
         ref_genes = None
         ref_elements_to_include = RefElementsToInclude(
             False, False, False, False, False, False, False )
     
-    if args.region != None:
+    if args.region is not None:
         region_data = args.region.strip().split(":")
         contig = clean_chr_name(region_data[0])
         try: 
@@ -319,16 +319,16 @@ def parse_arguments():
             start, stop = 0, 1e100
         args.region = ( contig, (start, stop) )
     
-    if args.cage_reads != None:
-        assert args.rampage_reads == None and args.passeq_reads == None, \
+    if args.cage_reads is not None:
+        assert args.rampage_reads is None and args.passeq_reads is None, \
             "Can not use RAMPAGE with CAGE or PASSeq reads"
         if config.VERBOSE: config.log_statement( "Loading %s" % args.cage_reads.name )
         rev_reads = {'forward':False, 'backward':True, 'auto': None}[
             args.cage_read_type]
         distal_reads = CAGEReads(args.cage_reads.name, "rb").init(
             reverse_read_strand=rev_reads, ref_genes=ref_genes)
-    elif args.rampage_reads != None:
-        assert args.cage_reads == None and args.passeq_reads == None, \
+    elif args.rampage_reads is not None:
+        assert args.cage_reads is None and args.passeq_reads is None, \
             "Can not use CAGE with RAMPAGE/PASSeq reads"
         if config.VERBOSE: 
             config.log_statement( "Loading %s" % args.rampage_reads.name )
@@ -336,8 +336,8 @@ def parse_arguments():
             args.rampage_read_type]
         distal_reads = RAMPAGEReads(args.rampage_reads.name, "rb").init(
             reverse_read_strand=rev_reads, ref_genes=ref_genes)
-    elif args.passeq_reads != None:
-        assert args.cage_reads == None and args.rampage_reads == None, \
+    elif args.passeq_reads is not None:
+        assert args.cage_reads is None and args.rampage_reads is None, \
             "Can not use PASSeq with CAGE/RAMPAGE reads"
         if config.VERBOSE: 
             config.log_statement( "Loading %s" % args.passeq_reads.name )
@@ -354,15 +354,15 @@ def parse_arguments():
         args.rnaseq_read_type]
 
     rnaseq_reads = RNAseqReads(args.rnaseq_reads.name, "rb").init(
-        reads_are_stranded=(True if rev_reads != None else None),
+        reads_are_stranded=(True if rev_reads is not None else None),
         reverse_read_strand=rev_reads, ref_genes=ref_genes)
     assert rnaseq_reads.reads_are_stranded, "Calling peaks requires stranded RNAseq reads."
 
     output_stream = ProcessSafeOPStream( open(args.outfname, "w") 
-                                         if args.outfname != None
+                                         if args.outfname is not None
                                          else sys.stdout )
     track_name = ( 
-        "peaks" if args.outfname == None else output_stream.name.replace(
+        "peaks" if args.outfname is None else output_stream.name.replace(
             "." + args.outfname_type, "") )
     
     global shift_and_write
@@ -377,7 +377,7 @@ def parse_arguments():
     print >> output_stream, track_header
     
     global BED_ofp
-    if args.bed_peaks_ofname != None:
+    if args.bed_peaks_ofname is not None:
         BED_ofp = ProcessSafeOPStream(open(args.bed_peaks_ofname, "w"))
         track_header = "track name=%s" % track_name
         print >> BED_ofp, track_header
@@ -408,7 +408,7 @@ def main():
                            for ctg, ctg_len in zip(contigs, contig_lens))
         
         # if we are supposed to quantify the annotated promoters
-        if annotation_quantification_ofname != None:
+        if annotation_quantification_ofname is not None:
             with open(annotation_quantification_ofname, 'w') as ofp:
                 for gene in ref_genes:
                     gene_region = {'chrm': gene.chrm, 'strand': gene.strand, 
@@ -447,7 +447,7 @@ def main():
                 ref_genes, ref_elements_to_include, 
                 region_to_use=region_to_use)
 
-        if gene_regions_ofname != None:
+        if gene_regions_ofname is not None:
             with open(gene_regions_ofname, "w") as genes_ofp:
                 for gene in gene_segments:
                     gene.write_elements_bed(genes_ofp)

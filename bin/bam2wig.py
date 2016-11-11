@@ -116,7 +116,7 @@ def generate_wiggle(reads, ofps, num_threads=1, contig=None ):
     for chrm_length, chrm  in sorted(izip(reads.lengths, reads.references)):
         strands = ['+', '-'] if len(ofps) == 2 else [None,]
         # skip regions not in the specified contig, if requested 
-        if contig != None and clean_chr_name(chrm) != clean_chr_name(contig): 
+        if contig is not None and clean_chr_name(chrm) != clean_chr_name(contig): 
             continue
         for strand in strands:
             ofp = ofps[strand]
@@ -130,7 +130,7 @@ def generate_wiggle(reads, ofps, num_threads=1, contig=None ):
         ps = [None]*num_threads
         while len( all_args ) > 0:
             for i in xrange(num_threads):
-                if ps[i] == None or not ps[i].is_alive():
+                if ps[i] is None or not ps[i].is_alive():
                     ps[i] = multiprocessing.Process( 
                         target=populate_cvg_array_for_contig, 
                         args=all_args.pop() )
@@ -139,7 +139,7 @@ def generate_wiggle(reads, ofps, num_threads=1, contig=None ):
             time.sleep( 0.1 )
 
         for p in ps:
-            if p != None: p.join()
+            if p is not None: p.join()
     
     for fp in ofps.values(): fp.close()
     
@@ -186,18 +186,18 @@ def parse_arguments():
     if args.ucsc: fix_chrm_name = fix_chrm_name_for_ucsc
     
     assert args.read_filter in ( '1', '2', None )
-    read_filter = int(args.read_filter) if args.read_filter != None else None
+    read_filter = int(args.read_filter) if args.read_filter is not None else None
     
     if args.assay not in allowed_assays:
         raise ValueError, "Unrecongized assay (%s)" % args.assay
     
     region = args.region
-    if region != None:
+    if region is not None:
         if ':' in region or '-' in region:
             assert False, "Invalid contig name: %s" % region
     
     # if an output prefix isn't provided, then use the bam filename prefix
-    if args.out_fname_prefix == None:
+    if args.out_fname_prefix is None:
         fname_data = args.mapped_reads_fname.split(".")
         # remove bam and sorted suffixes
         while fname_data[-1] in ('bam', 'sorted'):
@@ -281,7 +281,7 @@ def main():
     # write the bedgraph header information
     if not build_bigwig:
         for key, fp in ofps.iteritems():
-            strand_str = "" if key == None else {
+            strand_str = "" if key is None else {
                 '+': '.plus', '-': '.minus'}[key]
             fp.write( "track name=%s%s type=bedGraph\n" \
                           % ( os.path.basename(op_prefix), strand_str ) )
@@ -295,7 +295,7 @@ def main():
         with build_chrm_sizes_file(reads) as chrm_sizes_file:        
             threads = []
             for strand, bedgraph_fp in ofps.iteritems():
-                strand_str = "" if strand == None else ( 
+                strand_str = "" if strand is None else ( 
                     {'+': '.plus', '-': '.minus'}[strand] )
                 op_fname = op_prefix + strand_str + ".bw"
 

@@ -62,7 +62,7 @@ def write_gene_to_gtf( ofp, gene ):
         
         if config.FIX_CHRM_NAMES_FOR_UCSC:
             transcript.chrm = fix_chrm_name_for_ucsc(transcript.chrm)
-        assert transcript.gene_id != None
+        assert transcript.gene_id is not None
         lines.append( transcript.build_gtf_lines(
                 meta_data, source="grit") + "\n" )
     
@@ -115,7 +115,7 @@ def run_bam2wig(fname, op_prefix, assay, region,
     if reverse_read_strand:
         command.append( "--reverse-read-strand" )
     if verbose: command.append( "--verbose" )
-    if region != None: command.extend( ("--region", "%s" % region) )
+    if region is not None: command.extend( ("--region", "%s" % region) )
     subprocess.check_call(command)
 
 def run_all_bam2wigs(conn, args):
@@ -128,7 +128,7 @@ def run_all_bam2wigs(conn, args):
     for data_type in ('cage', 'rampage', 'polya'):
         for reads, in get_elements( conn, ('filename', ), data_type):
             # unfortunately, sqllite returns none for an empty query
-            if reads == None: continue
+            if reads is None: continue
             run_bam2wig(reads, os.path.basename(reads),
                         data_type, args.region,
                         args.threads, False, args.verbose)
@@ -156,15 +156,15 @@ class Samples(object):
         lines.append( ControlFileEntry( 
                 None, None, "rnaseq", 'true', 'true', 
                 args.rnaseq_read_type, os.path.abspath(args.rnaseq_reads.name) ) )
-        if args.cage_reads != None:
+        if args.cage_reads is not None:
             lines.append( ControlFileEntry( 
                     None, None, "cage", 'false', 'true', 
                     args.cage_read_type, os.path.abspath(args.cage_reads.name) ) )
-        if args.rampage_reads != None:
+        if args.rampage_reads is not None:
             lines.append( ControlFileEntry( 
                     None, None, "rampage", 'true', 'true', 
                     args.rampage_read_type, os.path.abspath(args.rampage_reads.name) ) )
-        if args.polya_reads != None:
+        if args.polya_reads is not None:
             lines.append( ControlFileEntry( 
                     None, None, "polya", 'false', 'true',
                     args.polya_read_type, os.path.abspath(args.polya_reads.name) ) )
@@ -210,12 +210,12 @@ class Samples(object):
         # initialize a sqlite db to store samples
         self.initialize_sample_db()
         # parse the control file, if it exists
-        if args.control != None:
+        if args.control is not None:
             self.control_entries = self.parse_control_file(args.control)
         # if there any reads (bnut no control file from above) then 
         # load them
-        elif (args.rnaseq_reads != None or args.polya_reads != None \
-                  or args.rampage_reads != None or args.cage_reads != None):
+        elif (args.rnaseq_reads is not None or args.polya_reads is not None \
+                  or args.rampage_reads is not None or args.cage_reads is not None):
             self.control_entries = self.parse_single_sample_args( args )
         # if there are no provided reads (ie, if we're jsut building transcripts
         # from elements) then there is nothing to load
@@ -225,7 +225,7 @@ class Samples(object):
         # if any of the read_type arguments are 'auto', then load the
         # reference genome
         if any(x.read_type == 'auto' for x in self.control_entries):
-            if args.reference == None:
+            if args.reference is None:
                 raise ValueError, "One of the read_type entries is set to 'auto' but a reference was not provided"
             if config.VERBOSE: config.log_statement("Loading annotation file.")
             self.ref_genes = load_gtf( args.reference )
@@ -252,14 +252,14 @@ class Samples(object):
         # get the data
         query = "SELECT * FROM data WHERE assay='{a}'".format(a=assay)
         
-        if rep_id != None: 
-            assert sample_type != None, \
+        if rep_id is not None: 
+            assert sample_type is not None, \
                 "rep_id can't be filtered without a sample type filter"
-        if sample_type != None:
+        if sample_type is not None:
             query += " AND (sample_type = '{s}'".format(s=sample_type)
             if include_merged: query += "OR sample_type = '*') "
             else: query += ") "
-        if rep_id != None:
+        if rep_id is not None:
             query += " AND (rep_id = '{r}' ".format(r=rep_id)
             if include_merged: query += "OR rep_id = '*') "
             else: query += ") "
@@ -270,13 +270,13 @@ class Samples(object):
 
     def _load_rnaseq_reads(self, sample_type, rep_id, include_merged):
         if config.VERBOSE: config.log_statement(
-            "Initializing RNAseq reads for sample '%s'." % sample_type)
+            "Initializing RNAseq reads for sample '%s'." % sample_type, trace=True)
         
         try: 
             with open(sample_type + ".fldist.obj") as fl_dists_fp:
                 fl_dists = pickle.load( fl_dists_fp )
         except:
-            #config.log_statement("CANT OPEN %s" % sample_type + ".fldist.obj", trace=True)
+            config.log_statement("CANT OPEN %s" % sample_type + ".fldist.obj", trace=True)
             fl_dists = None
 
         all_reads = []
@@ -286,7 +286,7 @@ class Samples(object):
             if False and data.filename in self.mapped_reads_cache:
                 reads = self.mapped_reads_cache[data.filename]
                 reads = reads.reload()
-                #assert reads.fl_dists != None
+                #assert reads.fl_dists is not None
             else:
                 assert data.paired == 'true', "RNASeq reads must be paired"
                 assert data.stranded == 'true', "RNASeq reads must be stranded"
@@ -369,15 +369,16 @@ class Samples(object):
         try: 
             with open(str(sample_type) + ".read_cnts.obj") as read_cnts_fp:
                 all_read_cnts = pickle.load(read_cnts_fp)
+                config.log_statement(("Loaded all_read_cnts from file: %s" % str(all_read_cnts)), trace=True)
                 for read_cnts, reads in zip(
                         all_read_cnts, 
                         (promoter_reads, rnaseq_reads, polya_reads)):
-                    if reads != None:
+                    if reads is not None:
                         # XXX
                         for rep_reads in reads:
                             rep_reads.num_reads = read_cnts
         except IOError:
-            #config.log_statement("CANT OPEN %s" % sample_type + ".read_cnts.obj", trace=True)
+            config.log_statement("CANT OPEN %s" % sample_type + ".read_cnts.obj", trace=True)
             pass
         
         if verify_args:
@@ -660,7 +661,7 @@ def parse_arguments():
         log_ofstream=log_ofstream)
     config.log_statement = log_statement
     
-    if args.region != None:
+    if args.region is not None:
         # if this is jsut a contig name
         if ":" not in args.region:
             args.region = (clean_chr_name(args.region), (0, 1e100))
@@ -701,13 +702,13 @@ class discover_elements(dict):
             rnaseq_reads.fl_dists = fl_dists
 
             # set the fl dists, and read counts
-            config.log_statement("Writing to file %s" % str(sample_type)+".read_cnts.obj")
+            config.log_statement((("Writing to file %s" % str(sample_type))+(".read_cnts.obj: %s" % str(all_read_cnts))), trace=True)
             with open(str(sample_type) + ".read_cnts.obj", "w") as read_cnts_ofp:
                 pickle.dump( all_read_cnts, read_cnts_ofp)
             for read_cnts, reads in zip(
                     all_read_cnts, 
                     (promoter_reads, rnaseq_reads, polya_reads)):
-                if reads != None:
+                if reads is not None:
                     reads.num_reads = read_cnts
             
             grit.find_elements.find_elements(
@@ -734,13 +735,14 @@ class discover_elements(dict):
     
     def iteritems(self):
         for sample_type in self.keys():
-            if self[sample_type] == None:
+            if self[sample_type] is None:
                 self[sample_type] = self._build_elements(sample_type)
             yield sample_type, self[sample_type]
         return
 
 def main():
     args = parse_arguments()
+    config.log_statement("args=%s" % args)
 
     # load the samples into database, and the reference genes if necessary
     sample_data = Samples(args)
@@ -749,22 +751,22 @@ def main():
 
     # if the reference genes weren't loaded while parsing the data, and we
     # need the reference elements, then load the reference genes now
-    if args.reference != None and sample_data.ref_genes == None:
+    if args.reference is not None and sample_data.ref_genes is None:
         if config.VERBOSE: 
             config.log_statement("Loading annotation file.", log=True)
         sample_data.ref_genes = load_gtf(args.reference)
     
     # find elements if necessary, load the gtf if we are running in 
     # quantification mode
-    if args.GTF != None:
+    if args.GTF is not None:
         assert not config.ONLY_BUILD_CANDIDATE_TRANSCRIPTS
         assert not args.only_build_elements
-        assert args.elements == None, "It doesn't make sense to set --GTF and --elements - did you mean to set --reference instead of --GTF?"
+        assert args.elements is None, "It doesn't make sense to set --GTF and --elements - did you mean to set --reference instead of --GTF?"
         sample_types = sample_data.get_sample_types()
         if len(sample_types) != 1: 
             raise ValueError, "Can not provide --elements and data from multiple sample types."
         elements = {sample_types[0]: (None, args.GTF)}
-    elif args.elements !=  None:
+    elif args.elements is not None:
         assert not args.only_build_elements
         sample_types = sample_data.get_sample_types()
         if len(sample_types) > 1: 
@@ -789,15 +791,15 @@ def main():
         gtf_fname = "%s.gtf" % sample_type
         tracking_fname = "%s.transcript_tracking" % sample_type
 
-        assert elements_fp == None or gtf_fp == None
+        assert elements_fp is None or gtf_fp is None
         # try to load an already built gtf
-        if args.continue_run and gtf_fp == None:
+        if args.continue_run and gtf_fp is None:
             try: gtf_fp = open(gtf_fname)
             except IOError: pass
             else:
                 msg = "WARNING: '%s' already exists - using existing file."
                 config.log_statement(msg % gtf_fname, log=True)
-        if gtf_fp != None:
+        if gtf_fp is not None:
             config.log_statement( "Loading %s" % gtf_fp.name, log=True )
             genes_fnames = []
             fnames = [ os.path.join(config.tmp_dir, fname) 
@@ -837,6 +839,7 @@ def main():
                     ) = sample_data.get_reads(
                         sample_type, rep_id, 
                         verify_args=False, include_merged=False)
+                config.log_statement("promoter_reads=%s, rnaseq_reads=%s, polya_reads=%s" % (promoter_reads, rnaseq_reads, polya_reads), trace=True)
     
     if args.only_build_elements:
         return
@@ -872,10 +875,11 @@ def main():
             (promoter_reads, rnaseq_reads, polya_reads) = sample_data.get_reads(
                 sample_type, rep_id, 
                 verify_args=False, include_merged=False)
-            assert rnaseq_reads.fl_dists != None
+            config.log_statement("promoter_reads=%s, rnaseq_reads=%s, polya_reads=%s" % (promoter_reads, rnaseq_reads, polya_reads), trace=True)
+            assert rnaseq_reads.fl_dists is not None
 
             # find what to prefix the output files with
-            if rep_id == None:
+            if rep_id is None:
                 exp_ofname = "%s.expression_tracking" % sample_type
             else:
                 exp_ofname = "%s.%s.expression_tracking" % (sample_type, rep_id)
