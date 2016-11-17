@@ -771,6 +771,8 @@ def bin_rnaseq_reads( reads, chrm, strand, exon_boundaries, include_read_type=Tr
     gene_stop = int(exon_boundaries[-1])
     paired_reads = list( reads.iter_paired_reads(
             chrm, strand, gene_start, gene_stop+1) )
+    #config.log_statement("querying for RNAseq reads from %s: %s:%s-%s:%s, found %s reads" % 
+        #(','.join([read.filename for read in reads._reads]), chrm,  gene_start, gene_stop+1, strand, len(paired_reads)))
     
     # find the unique subset of contiguous read sub-locations
     read_locs = set()
@@ -822,6 +824,7 @@ def bin_rnaseq_reads( reads, chrm, strand, exon_boundaries, include_read_type=Tr
         else: key = tuple(sorted((bin1,bin2)))
         binned_reads[key] += 1
     
+    #config.log_statement("binned_reads=%s" % dict(binned_reads))
     return dict(binned_reads)
 
 def bin_single_end_rnaseq_reads(reads, chrm, strand, exon_boundaries):

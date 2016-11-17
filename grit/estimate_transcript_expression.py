@@ -558,11 +558,11 @@ def build_design_matrices_worker( gene_ids,
                     gene.id, gene.chrm, gene.strand, 
                     gene.start, gene.stop, len(gene.transcripts) ) )
             
-            config.log_statement("rnaseq_reads=%s, promoter_reads=%s, polya_reads=%s, MAX_NUM_TRANSCRIPTS_TO_QUANTIFY=%s" %
-                (rnaseq_reads.num_reads if rnaseq_reads else rnaseq_reads, 
-                 promoter_reads.num_reads if promoter_reads else promoter_reads, 
-                 polya_reads.num_reads if polya_reads else polya_reads, 
-                 config.MAX_NUM_TRANSCRIPTS_TO_QUANTIFY), trace=True)
+            #config.log_statement("rnaseq_reads=%s, promoter_reads=%s, polya_reads=%s, MAX_NUM_TRANSCRIPTS_TO_QUANTIFY=%s" %
+                #(rnaseq_reads.num_reads if rnaseq_reads else rnaseq_reads, 
+                 #promoter_reads.num_reads if promoter_reads else promoter_reads, 
+                 #polya_reads.num_reads if polya_reads else polya_reads, 
+                 #config.MAX_NUM_TRANSCRIPTS_TO_QUANTIFY))
             f_mat = f_matrix.DesignMatrix(
                 gene, fl_dists, 
                 rnaseq_reads, promoter_reads, polya_reads,
@@ -678,7 +678,7 @@ def build_gene_lines_for_tracking_file(
 
 def write_data_to_tracking_file(data, fl_dists, ofp):
     num_reads_in_bams = data.get_num_reads_in_bams()
-    config.log_statement("num_reads_in_bams="+str(num_reads_in_bams), trace=True)
+    #config.log_statement("num_reads_in_bams="+str(num_reads_in_bams), trace=True)
     ofp.write("\t".join(
             ["tracking_id", "gene_id ",
              "coverage", "FPKM    ",
