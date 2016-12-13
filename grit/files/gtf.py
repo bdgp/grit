@@ -360,7 +360,7 @@ def load_gtf(fname_or_fp, contig=None, strand=None):
     
     if isinstance( fname_or_fp, str ):
         fp.close()
-    
+    log_statement("Found %s genes in reference annotation %s" % (len(genes), fname_or_fp))
     return genes
 
 def load_next_gene_from_gtf(fp, contig=None, strand=None, 
