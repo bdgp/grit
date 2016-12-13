@@ -340,7 +340,7 @@ class GeneElements(object):
             
             try: fpkm = element.fpkm_ub
             except: fpkm = element.fpkm
-            score = min(1000, int(1000*fpkm/max_min_fpkm))
+            #score = min(1000, int(1000*fpkm/max_min_fpkm))
             score = 1000
             grp_id = element_type + "_%s_%s_%i_%i" % region
 
