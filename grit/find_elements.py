@@ -358,14 +358,14 @@ def merge_tss_exons(tss_exons):
             if exon.start - curr_start < config.TSS_EXON_MERGE_DISTANCE:
                 score += exon.score
             else:
-                merged_tss_exons.append( Bin(curr_start, stop,
+                merged_tss_exons.append( TranscriptBoundaryBin(curr_start, stop,
                                              exon.left_label, 
                                              exon.right_label,
                                              exon.type, score) )
                 curr_start = exon.start
                 score = exon.score
             
-        merged_tss_exons.append( Bin(curr_start, stop,
+        merged_tss_exons.append( TranscriptBoundaryBin(curr_start, stop,
                                      exon.left_label, 
                                      exon.right_label,
                                      exon.type, score) )
@@ -385,14 +385,14 @@ def merge_tes_exons(tes_exons):
                 curr_stop = exon.stop
                 score += exon.score
             else:
-                merged_tes_exons.append( Bin(start, curr_stop,
+                merged_tes_exons.append( TranscriptBoundaryBin(start, curr_stop,
                                             exon.left_label, 
                                             exon.right_label,
                                             exon.type, score) )
                 curr_stop = exon.stop
                 score = exon.score
 
-        merged_tes_exons.append( Bin(start, curr_stop,
+        merged_tes_exons.append( TranscriptBoundaryBin(start, curr_stop,
                                      exon.left_label, 
                                      exon.right_label,
                                      exon.type, score) )
@@ -566,12 +566,12 @@ def build_splice_graph_and_binned_reads_in_gene(
         #(gene.chrm, gene.strand, gene.start, gene.stop) )
     
     # initialize the cage peaks with the reference provided set
-    tss_regions = [ Bin(pk_start, pk_stop, 
+    tss_regions = [ TranscriptBoundaryBin(pk_start, pk_stop, 
                      "CAGE_PEAK_START", "CAGE_PEAK_STOP", "CAGE_PEAK")
                  for pk_start, pk_stop in ref_elements['promoter'] ]
     
     # initialize the polya peaks with the reference provided set
-    tes_regions = [ Bin( pk_start, pk_stop, 
+    tes_regions = [ TranscriptBoundaryBin( pk_start, pk_stop, 
                       "POLYA_PEAK_START", "POLYA_PEAK_STOP", "POLYA")
                  for pk_start, pk_stop in ref_elements['polya'] ]
     
@@ -708,7 +708,7 @@ def build_splice_graph_and_binned_reads_in_gene(
         assert start_i in splice_graph
         # skip junctions that splice to the last base in the gene XXX
         if stop_i == splice_graph.number_of_nodes(): continue
-        assert stop_i in splice_graph, str((stop_i, splice_graph.nodes(data=True)))
+        assert stop_i in splice_graph, str((stop_i, splice_graph.number_of_nodes(), splice_graph.nodes(data=True)))
         if gene.strand == '+':
             bin = SegmentBin( start, stop, 'D_JN', 'R_JN', type='INTRON', cnt=cnt)
             splice_graph.add_edge(start_i, stop_i, type='splice', bin=bin)
@@ -1065,11 +1065,11 @@ def find_exons_in_gene( gene, contig_lens, ofp,
 
     # merge in the reference exons
     for tss_exon in gene_ref_elements['tss_exon']:
-        gene.elements.append( Bin(tss_exon[0], tss_exon[1], 
+        gene.elements.append( SegmentBin(tss_exon[0], tss_exon[1], 
                                   "REF_TSS_EXON_START", "REF_TSS_EXON_STOP",
                                   "TSS_EXON") )
     for tes_exon in gene_ref_elements['tes_exon']:
-        gene.elements.append( Bin(tes_exon[0], tes_exon[1], 
+        gene.elements.append( SegmentBin(tes_exon[0], tes_exon[1], 
                                   "REF_TES_EXON_START", "REF_TES_EXON_STOP",
                                   "TES_EXON") )
     
