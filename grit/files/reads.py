@@ -837,7 +837,7 @@ class CAGEReads(Reads):
                 raise ValueError, "Determining reverse_read_strand requires reference genes"
             reverse_read_strand_params = determine_read_strand_params(
                 self, ref_genes, pairs_are_opp_strand, 'tss_exon',
-                300, 50, 10 )
+                300, 300, 10 )
             assert 'stranded' in reverse_read_strand_params
             if 'reverse_read_strand' in reverse_read_strand_params:
                 reverse_read_strand = True
@@ -900,7 +900,7 @@ class RAMPAGEReads(Reads):
                 raise ValueError, "Determining reverse_read_strand requires reference genes"
             reverse_read_strand_params = determine_read_strand_params(
                 self, ref_genes, pairs_are_opp_strand, 'tss_exon',
-                300, 50, 10 )
+                300, 300, 10 )
             assert 'stranded' in reverse_read_strand_params
             if 'reverse_read_strand' in reverse_read_strand_params:
                 reverse_read_strand = True
@@ -967,7 +967,7 @@ class PolyAReads(Reads):
                 raise ValueError, "Determining reverse_read_strand requires reference genes"
             reverse_read_strand_params = determine_read_strand_params(
                 self, ref_genes, pairs_are_opp_strand, 'tes_exon',
-                300, 50, 10 )
+                300, 300, 10 )
             assert 'stranded' in reverse_read_strand_params
             if 'reverse_read_strand' in reverse_read_strand_params:
                 reverse_read_strand = True
