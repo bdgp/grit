@@ -297,10 +297,11 @@ def extract_jns_and_reads_in_region(
 
     reg_len = r_stop-r_start+1
     
-    jn_reads = {'+': defaultdict(int), '-': defaultdict(int)}
+    jn_reads = {'+': defaultdict(int), '-': defaultdict(int), '.': defaultdict(int)}
 
     cov = { '+': numpy.zeros(reg_len, dtype=float), 
-            '-': numpy.zeros(reg_len, dtype=float) }
+            '-': numpy.zeros(reg_len, dtype=float),
+            '.': numpy.zeros(reg_len, dtype=float) }
 
     pair1_reads = defaultdict(list)
     pair2_reads = defaultdict(list)
@@ -814,7 +815,8 @@ class RNAseqReads(Reads):
             'reverse_read_strand': reverse_read_strand, 
             'reads_are_stranded': reads_are_stranded, 
             'pairs_are_opp_strand': pairs_are_opp_strand, 
-            'reads_are_paired': reads_are_paired
+            'reads_are_paired': reads_are_paired,
+            'ref_genes': ref_genes
         }
         
         return self
@@ -856,7 +858,8 @@ class CAGEReads(Reads):
         self._init_kwargs = {
             'reverse_read_strand': reverse_read_strand, 
             'pairs_are_opp_strand': pairs_are_opp_strand, 
-            'reads_are_paired': reads_are_paired
+            'reads_are_paired': reads_are_paired,
+            'ref_genes': ref_genes
         }
         
         return self
@@ -920,7 +923,8 @@ class RAMPAGEReads(Reads):
         self._init_kwargs = {
             'reverse_read_strand': reverse_read_strand, 
             'pairs_are_opp_strand': pairs_are_opp_strand,
-            'reads_are_paired': reads_are_paired
+            'reads_are_paired': reads_are_paired,
+            'ref_genes': ref_genes
         }
         
         return self
@@ -984,7 +988,8 @@ class PolyAReads(Reads):
         
         self._init_kwargs = {
             'reverse_read_strand': reverse_read_strand, 
-            'pairs_are_opp_strand': pairs_are_opp_strand 
+            'pairs_are_opp_strand': pairs_are_opp_strand,
+            'ref_genes': ref_genes
         }
         
         return self
