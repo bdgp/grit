@@ -280,6 +280,7 @@ class Samples(object):
             fl_dists = None
 
         all_reads = []
+        #config.log_statement("Samples:\n%s" % str(self))
         for data in self.get_elements( 
                 'rnaseq', sample_type, rep_id, include_merged=include_merged):
             
@@ -293,8 +294,11 @@ class Samples(object):
                 rev_reads = {'forward':False, 'backward':True, 'auto': None}[
                     data.read_type]
                 reads = RNAseqReads(data.filename)
+                #config.log_statement("%s: rev_reads=%s" % (str(data), rev_reads))
                 reads.init(reverse_read_strand=rev_reads, 
-                           ref_genes=self.ref_genes)
+                            reads_are_stranded=True,
+                            reads_are_paired=True,
+                            ref_genes=self.ref_genes)
                 reads.fl_dists = fl_dists
                 self.mapped_reads_cache[data.filename] = reads
             all_reads.append(reads)
