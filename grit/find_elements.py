@@ -669,7 +669,7 @@ def build_splice_graph_and_binned_reads_in_gene(
     empty_segments = set()
     in_empty_region = False
     for index, bnd in enumerate(sorted(segment_bnds)):
-        if in_empty_region:
+        #if in_empty_region:
             #assert 'EMPTY_STOP' in segment_bnd_labels[bnd], \
             #    str((gene, bnd, sorted(segment_bnd_labels.iteritems()), \
             #         sorted(jns.iteritems()))) # AssertionError
