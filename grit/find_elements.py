@@ -421,10 +421,10 @@ def find_transcribed_fragments_covering_region(
                 complete_paths.append((curr_path, curr_path_len))
             else:
                 for child in neighbors:
-                    if segment_graph.node[child]['type'] in ('TSS', 'TES'):
+                    if segment_graph.node[child].get('type') in ('TSS', 'TES'):
                         complete_paths.append((curr_path, curr_path_len))
                         continue
-                    assert segment_graph.node[child]['type'] == 'segment'
+                    assert segment_graph.node[child].get('type') == 'segment'
                     
                     if side == 'BEFORE':
                         new_path = [child,] + curr_path
@@ -500,13 +500,13 @@ def find_widest_path(splice_graph):
     try: 
         tss_max = max(data['bin'].fpkm_lb
                       for node, data in splice_graph.nodes(data=True)
-                      if data['type'] == 'TSS')
+                      if data.get('type') == 'TSS')
     except:
         tss_max = 0
     try:
         tes_max = max(data['bin'].fpkm_lb
                       for node, data in splice_graph.nodes(data=True)
-                      if data['type'] == 'TES')
+                      if data.get('type') == 'TES')
     except:
         tes_max = 0
     return None, max(tss_max, tss_max)
@@ -516,7 +516,7 @@ def find_widest_path(splice_graph):
     config.log_statement("Finding widest path")
     curr_paths = [ [[node,], data['bin'].fpkm, data['bin'].fpkm] 
                   for node, data in splice_graph.nodes(data=True)
-                  if data['type'] == 'TSS']
+                  if data.get('type') == 'TSS']
     max_path = None
     max_min_fpkm = min( x[1] for x in curr_paths )/10. if len(curr_paths) > 0 else 0
     while len(curr_paths) > 0:
@@ -797,10 +797,10 @@ def quantify_segment_expression(gene, splice_graph, binned_reads ):
     transcripts = set()
     segment_transcripts_map = {}
     for segment_id, data in splice_graph.nodes(data=True):
-        if 'type' not in data: 
-            assert False, str((gene, splice_graph.nodes(data=True), 
-                               splice_graph.node[segment_id], segment_id, data))
-        if data['type'] != 'segment': continue        
+        #if 'type' not in data: 
+            #assert False, str((gene, splice_graph.nodes(data=True), 
+                               #splice_graph.node[segment_id], segment_id, data))
+        if data.get('type') != 'segment': continue        
         segment_transcripts = find_transcribed_fragments_covering_region(
             splice_graph, segment_id, max_fl)
         segment_transcripts = [tuple(t) for t in segment_transcripts]
@@ -820,7 +820,7 @@ def quantify_segment_expression(gene, splice_graph, binned_reads ):
     
     # add in the splice elements
     for start_i, stop_i, data in splice_graph.edges(data=True):
-        if data['type'] != 'splice': continue
+        if data.get('type') != 'splice': continue
         # find transcripts that contain this splice
         segment_transcripts_map[(start_i, stop_i)] = [
             t for t in segment_transcripts_map[(start_i,)]
@@ -833,7 +833,7 @@ def quantify_segment_expression(gene, splice_graph, binned_reads ):
     segment_bnds = set()
     segment_bnd_labels = defaultdict(set)
     for segment_i, data in sorted(splice_graph.nodes(data=True)):
-        if data['type'] != 'segment': continue
+        if data.get('type') != 'segment': continue
         segment_bin = data['bin']
         segment_nodes[segment_i] = segment_bin
         segment_bnds.add(segment_bin.start)
@@ -965,7 +965,7 @@ def build_exons_from_exon_segments(gene, splice_graph, max_min_expression):
 
     exon_segments = [ data['bin']
                       for node_id, data in splice_graph.nodes(data=True)
-                      if data['type'] == 'segment' ]
+                      if data.get('type') == 'segment' ]
     if gene.strand == '-':
         exon_segments = reverse_strand(exon_segments, gene.stop)
     exon_segments = sorted(exon_segments, key=lambda x:x.start)
@@ -1049,7 +1049,7 @@ def find_exons_in_gene( gene, contig_lens, ofp,
     # introns are both elements and element segments
     gene.elements.extend(
         data['bin'] for n1, n2, data in splice_graph.edges(data=True)
-        if data['type'] == 'splice'
+        if data.get('type') == 'splice'
         and data['bin'].fpkm > min_max_exp)
 
     if config.DEBUG_VERBOSE:
@@ -1060,7 +1060,7 @@ def find_exons_in_gene( gene, contig_lens, ofp,
     # add T*S's
     gene.elements.extend(
         data['bin'] for node_id, data in splice_graph.nodes(data=True)
-        if data['type'] in ('TSS', 'TES')
+        if data.get('type') in ('TSS', 'TES')
         and data['bin'].fpkm > min_max_exp)
 
     # merge in the reference exons
