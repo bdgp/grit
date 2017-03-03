@@ -763,7 +763,7 @@ def fast_quantify_segment_expression(gene, splice_graph,
     for element_i, data in splice_graph.nodes(data=True):
         #element = splice_graph.nodes(element_i)
         element = splice_graph.node[element_i]
-        if element['type'] != 'segment': continue
+        if element.get('type') != 'segment': continue
         coverage = rnaseq_cov[element['bin'].start-gene.start
                               :element['bin'].stop-gene.start+1]
         n_reads_in_segment = 0 if len(coverage) == 0 else numpy.median(coverage)
@@ -774,7 +774,7 @@ def fast_quantify_segment_expression(gene, splice_graph,
         element['bin'].set_expression(*fpkms)
 
     for start, stop, data in splice_graph.edges(data=True):
-        if data['type'] != 'splice': continue
+        if data.get('type') != 'splice': continue
         n_reads_in_segment = float(data['bin'].cnt)
         effective_len = float(max(
             1, avg_read_len - 2*config.MIN_INTRON_FLANKING_SIZE))
