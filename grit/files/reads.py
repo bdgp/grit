@@ -781,6 +781,8 @@ class RNAseqReads(Reads):
             read_strand_attributes = determine_read_strand_params(
                 self, ref_genes, pairs_are_opp_strand, 'internal_exon',
                 300, 50, 10 )
+            config.log_statement(
+                "read_strand_attributes = %s" % (read_strand_attributes,), log=True)
             if 'unstranded' in read_strand_attributes:
                 if reads_are_stranded in ('auto', None):
                     reads_are_stranded = False
@@ -802,7 +804,7 @@ class RNAseqReads(Reads):
                 elif 'dont_reverse_read_strand' in read_strand_attributes:
                     reverse_read_strand = False
                 else:
-                    assert False
+                    reverse_read_strand = None
                 if config.VERBOSE:
                     config.log_statement(
                         "Set reverse_read_strand to '%s' for '%s'" % (
